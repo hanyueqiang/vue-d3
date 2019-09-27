@@ -30,6 +30,12 @@ module.exports = {
     devtool: 'cheap-source-map',
     cacheBusting: true,
     cssSourceMap: false,
+    // proxy: { 
+    //   '/v2': {
+    //       target: target,
+    //       changeOrigin: true
+    //   }
+    // }
   },
 
   build: {
