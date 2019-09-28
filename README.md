@@ -8,11 +8,6 @@
 
 目前数据采用easy-mock进行数据模拟, Easy Mock 是一个可视化，并且能快速生成 模拟数据 的持久化服务。 忘掉下面这些实用但麻烦的 Mock 方式吧。在你用了 Easy Mock 之后，你肯定会爱不释手的。具体用法请看api文档
 
-访问： https://www.easy-mock.com/
-
-![image](https://github.com/yjx-passion/vue-element-admin/blob/master/src/screenshots/easy-mock.png)
-
-
 # 在线演示请点这里
 
 [Preview]
