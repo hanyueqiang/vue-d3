@@ -8,8 +8,8 @@
 每种类型的人看到的侧边栏不一样，可以进行的操作也不尽相同，于是就需要程序处理一下各个权限问题。-->
 
 # 本项目部分截图预览
-![image](https://github.com/yjx-passion/vue-element-admin/blob/master/src/screenshots/login.png)
-![doraemon-pro](src/assets/images/graph.jpg)
+![image](src/assets/images/login_demo.jpg)
+![image](src/assets/images/graph.jpg)
 
 ## Build Setup
   
