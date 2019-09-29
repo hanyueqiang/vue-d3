@@ -126,8 +126,8 @@ export default {
       var element = document.getElementById("graphcontainerdiv");
       var width = window.screen.width;
       var height = window.screen.height;
-      this.svg.attr("width", width);
-      this.svg.attr("height", height);
+      // this.svg.attr("width", width);
+      // this.svg.attr("height", height);
       if (element.requestFullscreen) {
         element.requestFullscreen();
       }
@@ -283,6 +283,9 @@ ul {
     font-size: 14px;
     color: #156498;
     margin-right: 30px;
+}
+.mind-cen {
+  height: calc(100% - 70px);
 }
 
 </style>
