@@ -68,7 +68,7 @@ const webpackConfig = merge(baseWebpackConfig, {
       template: 'index.html',
       inject: true,
       favicon: resolve('favicon.ico'),
-      title: 'vue-element-admin',
+      title: '知识图谱管理平台',
       path: config.build.assetsPublicPath + config.build.assetsSubDirectory,
       minify: {
         removeComments: true,
