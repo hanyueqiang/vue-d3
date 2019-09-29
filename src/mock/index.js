@@ -4,8 +4,6 @@ import loginAPI from './login'
 //   timeout: '350-600'
 // })
 
-
-
 // 登录相关
 Mock.mock(/\/user\/login/, 'post', loginAPI.login)
 Mock.mock(/\/user\/logout/, 'post', loginAPI.logout)

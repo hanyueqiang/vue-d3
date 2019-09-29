@@ -58,7 +58,8 @@ export default {
     page401: '401',
     page404: '404',
     i18n: 'i18n',
-    svgicons: 'svgicons'
+    svgicons: 'svgicons',
+    graph: 'graph'
   },
   excel: {
     export: 'Export',

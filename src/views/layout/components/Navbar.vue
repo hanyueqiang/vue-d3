@@ -1,21 +1,21 @@
 <template>
   <el-menu class="navbar" mode="horizontal">
     <hamburger class="hamburger-container" :toggleClick="toggleSideBar" :isActive="sidebar.opened"></hamburger>
-    <breadcrumb></breadcrumb>
-      <div class="right-menu">
+    <!-- <breadcrumb></breadcrumb> -->
+      <!-- <div class="right-menu">
          <nx-top-lock style="cursor:pointer" class="nx-help"></nx-top-lock>
-      </div>
+      </div> -->
       <el-dropdown class="avatar-container" trigger="click">
         <div class="avatar-wrapper">
           <img class="user-avatar" :src="logo">
           <i class="el-icon-caret-bottom"></i>
         </div>
         <el-dropdown-menu class="user-dropdown" slot="dropdown">
-          <router-link class="inlineBlock" to="/">
+          <!-- <router-link class="inlineBlock" to="/">
             <el-dropdown-item>
               首页
             </el-dropdown-item>
-          </router-link>
+          </router-link> -->
           <el-dropdown-item divided>
             <span @click="logout" style="display:block;">退出</span>
           </el-dropdown-item>

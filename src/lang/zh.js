@@ -54,7 +54,8 @@ export default {
     page401: '401',
     page404: '404',
     i18n: '国际化',
-    svgicons: 'svg图标'
+    svgicons: 'svg图标',
+    graph: '知识图谱'
   },
   permission: {
     roles: '你的权限',
