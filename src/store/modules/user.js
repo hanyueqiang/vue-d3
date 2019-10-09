@@ -29,29 +29,47 @@ const user = {
     Login({ commit }, userInfo) {
       userInfo.username = userInfo.username.trim()
       return new Promise((resolve, reject) => {
-        login(userInfo).then(response => {
-          const data = response.data
-          setToken(data.token)
-          commit('SET_TOKEN', data.token)
-          resolve()
-        }).catch(error => {
-          reject(error)
-        })
+        // login(userInfo).then(response => {
+        //   const data = response.data
+        //   setToken(data.token)
+        //   commit('SET_TOKEN', data.token)
+        //   resolve()
+        // }).catch(error => {
+        //   reject(error)
+        // })
+        setToken('admin')
+        commit('SET_TOKEN', 'admin')
+        resolve()
       })
     },
 
     // 获取用户信息
     GetInfo({ commit, state }) {
       return new Promise((resolve, reject) => {
-        getInfo(state.token).then(response => {
-          const data = response.data
-          commit('SET_ROLES', data.roles)
-          commit('SET_NAME', data.name)
-          commit('SET_AVATAR', data.avatar)
-          resolve(response)
-        }).catch(error => {
-          reject(error)
-        })
+        // getInfo(state.token).then(response => {
+        //   const data = response.data
+        //   commit('SET_ROLES', data.roles)
+        //   commit('SET_NAME', data.name)
+        //   commit('SET_AVATAR', data.avatar)
+        //   resolve(response)
+        // }).catch(error => {
+        //   reject(error)
+        // })
+        const response = {
+          code: 20000,
+          data: {
+            roles: ['admin'],
+            role: 'admin',
+            token: 'admin',
+            avatar: '',
+            name: 'admin'
+          }
+        }
+        const data = response.data
+        commit('SET_ROLES', data.roles)
+        commit('SET_NAME', data.name)
+        commit('SET_AVATAR', data.avatar)
+        resolve(response)
       })
     },
 
