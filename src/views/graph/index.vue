@@ -136,7 +136,7 @@
               >
                 <!-- <svg class="icon" aria-hidden="true">
                   <use xlink:href="#icon-daoru" />
-                </svg> -->
+                </svg>-->
                 选择文件
               </el-button>
             </el-upload>
@@ -157,7 +157,7 @@
           <el-button type="primary" @click="exportcsv">确 定</el-button>
         </el-form>
       </el-dialog>
-      <el-dialog id="editform" title="属性编辑" :visible.sync="isedit" width="30%">
+      <el-dialog id="editform" title="属性编辑" :visible.sync="isedit" width="30%" :append-to-body="true">
         <el-tabs
           type="card"
           tab-position="top"
@@ -206,7 +206,7 @@
                 <a href="javascript:void(0)" @click="addnetimage" class="cg">
                   <!-- <svg class="icon" aria-hidden="true">
                     <use xlink:href="#icon-add-s" />
-                  </svg> -->
+                  </svg>-->
                 </a>
               </el-form-item>
               <el-form-item label="已选图片" label-width="120px">
@@ -313,20 +313,20 @@
       <li class="el-dropdown-menu__item" @click="btnaddsingle">
         <!-- <svg class="icon" aria-hidden="true">
           <use xlink:href="#icon-jiedian" />
-        </svg> -->
+        </svg>-->
         <span class="pl-15">添加节点</span>
       </li>
       <li class="el-dropdown-menu__item" @click="btnquickaddnode">
         <!-- <svg class="icon" aria-hidden="true">
           <use xlink:href="#icon-add-rd" />
-        </svg> -->
+        </svg>-->
         <span class="pl-15">快速添加</span>
       </li>
       <li class="el-dropdown-menu__item" @click="btnquickaddnode">
         <!--		delete_node_and_relationship-->
         <!-- <svg class="icon" aria-hidden="true">
           <use xlink:href="#icon-shuchu" />
-        </svg> -->
+        </svg>-->
         <span class="pl-15">删除节点</span>
       </li>
     </ul>
@@ -335,13 +335,13 @@
       <li class="el-dropdown-menu__item" @click="updatelinkName">
         <!-- <svg class="icon" aria-hidden="true">
           <use xlink:href="#icon-editor" />
-        </svg> -->
+        </svg>-->
         <span class="pl-15">编辑</span>
       </li>
       <li class="el-dropdown-menu__item" @click="deletelink">
         <!-- <svg class="icon" aria-hidden="true">
           <use xlink:href="#icon-shanchu" />
-        </svg> -->
+        </svg>-->
         <span class="pl-15">删除</span>
       </li>
     </ul>
@@ -352,13 +352,13 @@
           <el-carousel height="197px" :interval="2000" arrow="always">
             <el-carousel-item v-for="item in showImageList" :key="item.ID">
               <div class="carous-img">
-                <img  :src="item.FileName" alt="">
+                <img :src="item.FileName" alt />
               </div>
             </el-carousel-item>
           </el-carousel>
         </div>
         <el-scrollbar v-show="editorcontent!=''" class="mind-fj-p">
-          <p v-html="editorcontent" ></p>
+          <p v-html="editorcontent"></p>
         </el-scrollbar>
       </div>
     </div>
@@ -369,7 +369,7 @@
 import { mapGetters } from "vuex";
 import $ from "jquery";
 import _ from "lodash";
-import * as d3 from 'd3';
+import * as d3 from "d3";
 
 export default {
   name: "graph",
@@ -519,7 +519,7 @@ export default {
         _this.svg.selectAll(".buttongroup").classed("circle_opreate", true);
         var left = event.clientX;
         var top = event.clientY;
-        console.log(left,top);
+        console.log(left, top);
         document.getElementById("blank_menubar").style.position = "fixed";
         document.getElementById("blank_menubar").style.left = left + "px";
         document.getElementById("blank_menubar").style.top = top + "px";
