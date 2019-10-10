@@ -97,13 +97,270 @@
       <el-scrollbar class="mind-cen" id="graphcontainerdiv">
         <div id="nodedetail" class="node_detail">
           <h5>详细数据</h5>
-          <span class="node_pd" v-for="(m,k) in nodedetail" :key="m">{{k}}:{{m}}</span>
+          <span class="node_pd" v-for="(m,k) in nodedetail" :key="k">{{k}}:{{m}}</span>
         </div>
         <el-scrollbar v-show="jsonshow" id="jsoncontainer" class="jsoncontainer">
           <pre id="json-renderer"></pre>
         </el-scrollbar>
         <div id="graphcontainer" class="graphcontainer"></div>
       </el-scrollbar>
+      <!-- 中部over -->
+      <div class="svg-set-box"></div>
+      <!-- 底部 -->
+      <el-dialog title="csv导入图谱" :visible.sync="dialogFormVisible" width="30%">
+        <el-form>
+          <div>
+            <span>注意字符集为utf-8无bom格式，三元组结构：节点-节点-关系</span>
+          </div>
+          <el-form-item label="图谱领域" label-width="120px">
+            <el-autocomplete style="width:100%" v-model="uploadparam.domain" placeholder="请输入内容">
+              <!--:fetch-suggestions="querySearch"-->
+            </el-autocomplete>
+          </el-form-item>
+          <el-form-item label="选择文件" label-width="120px">
+            <el-upload
+              class
+              :headers="headers"
+              ref="upload"
+              :action="uploadurl"
+              accept=".csv, .xls, .xlsx"
+              :show-file-list="true"
+              :data="uploadparam"
+              :on-success="csvsuccess"
+              :auto-upload="false"
+            >
+              <el-button
+                slot="trigger"
+                class="btn-bo"
+                style="padding: 12px 24px;margin-bottom: 0px;"
+              >
+                <!-- <svg class="icon" aria-hidden="true">
+                  <use xlink:href="#icon-daoru" />
+                </svg> -->
+                选择文件
+              </el-button>
+            </el-upload>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="dialogFormVisible = false">取 消</el-button>
+          <el-button type="primary" @click="submitUpload">确 定</el-button>
+        </div>
+      </el-dialog>
+      <el-dialog title="导出图谱csv" :visible.sync="exportFormVisible" width="30%">
+        <el-form>
+          <el-form-item label="图谱领域" label-width="120px">
+            <el-autocomplete style="width:100%" v-model="uploadparam.domain" placeholder="请输入内容">
+              <!--:fetch-suggestions="querySearch"-->
+            </el-autocomplete>
+          </el-form-item>
+          <el-button type="primary" @click="exportcsv">确 定</el-button>
+        </el-form>
+      </el-dialog>
+      <el-dialog id="editform" title="属性编辑" :visible.sync="isedit" width="30%">
+        <el-tabs
+          type="card"
+          tab-position="top"
+          v-model="propactiveName"
+          @tab-click="prophandleClick"
+          style="margin: 10px"
+        >
+          <el-tab-pane label="属性编辑" name="propedit">
+            <el-form :model="graphEntity">
+              <el-form-item label="节点名称" label-width="120px">
+                <el-input v-model="graphEntity.name" style="width:324px"></el-input>
+              </el-form-item>
+              <el-form-item label="选择颜色" label-width="120px">
+                <el-color-picker
+                  id="colorpicker"
+                  v-model="graphEntity.color"
+                  :predefine="predefineColors"
+                ></el-color-picker>
+              </el-form-item>
+              <el-form-item label="节点半径" label-width="120px">
+                <el-slider v-model="graphEntity.r" style="width:324px"></el-slider>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+          <el-tab-pane label="添加图片" name="propimage">
+            <el-form>
+              <el-form-item label="本地上传" label-width="120px">
+                <el-upload
+                  class
+                  :headers="headers"
+                  name="file"
+                  ref="upload"
+                  :action="uploadimageurl"
+                  accept=".jpg, .png"
+                  multiple
+                  :show-file-list="false"
+                  :data="uploadimageparam"
+                  :on-success="uploadsuccess"
+                  :auto-upload="true"
+                >
+                  <el-button slot="trigger" size="small" type="primary">选择</el-button>
+                </el-upload>
+              </el-form-item>
+              <el-form-item label="网络地址" label-width="120px">
+                <el-input v-model="netimageurl" style="width: 60%"></el-input>
+                <a href="javascript:void(0)" @click="addnetimage" class="cg">
+                  <!-- <svg class="icon" aria-hidden="true">
+                    <use xlink:href="#icon-add-s" />
+                  </svg> -->
+                </a>
+              </el-form-item>
+              <el-form-item label="已选图片" label-width="120px">
+                <ul class="el-upload-list el-upload-list--picture-card">
+                  <li
+                    v-for="(item, index) in nodeimagelist"
+                    :key="index"
+                    class="el-upload-list__item is-success"
+                  >
+                    <img :src="imageurlformat(item)" alt class="el-upload-list__item-thumbnail" />
+                    <label class="el-upload-list__item-status-label">
+                      <i class="el-icon-upload-success el-icon-check"></i>
+                    </label>
+                    <i class="el-icon-close" @click="imagehandleRemove(item)"></i>
+                    <span class="el-upload-list__item-actions">
+                      <span class="el-upload-list__item-preview">
+                        <i class="el-icon-zoom-in" @click="handlePictureCardPreview(item)"></i>
+                      </span>
+                      <span class="el-upload-list__item-delete">
+                        <i class="el-icon-delete" @click="imagehandleRemove(item)"></i>
+                      </span>
+                    </span>
+                  </li>
+                </ul>
+              </el-form-item>
+            </el-form>
+          </el-tab-pane>
+          <el-tab-pane label="添加描述" name="richtextedit">
+            <div ref="eidtorToolbar" id="eidtorToolbar" class="wange-toolbar"></div>
+            <div ref="eidtorContent" id="eidtorContent" class="wangeditor-form"></div>
+          </el-tab-pane>
+        </el-tabs>
+        <div slot="footer" class="dialog-footer">
+          <el-button
+            v-show="propactiveName=='propimage'"
+            type="primary"
+            @click="savenodeimage"
+            class="btn-line cur"
+          >保存</el-button>
+          <el-button
+            v-show="propactiveName=='richtextedit'"
+            @click="savenodecontent"
+            type="primary"
+            class="btn-line cur"
+          >保存</el-button>
+          <el-button
+            v-show="propactiveName=='propedit'&&graphEntity.uuid!=0"
+            type="primary"
+            @click="createnode"
+          >更新</el-button>
+          <el-button
+            v-show="propactiveName=='propedit'&&graphEntity.uuid==0"
+            type="primary"
+            @click="createnode"
+          >创建</el-button>
+          <el-button @click="resetsubmit">取消</el-button>
+        </div>
+      </el-dialog>
+      <el-dialog
+        id="batchcreateform"
+        :title="operatenameformat(operatetype)"
+        :visible.sync="isbatchcreate"
+        width="30%"
+      >
+        <div v-show="operatetype==1" class="mb-l">添加同级</div>
+        <div v-show="operatetype==2" class="mb-l">添加下级</div>
+        <div v-show="operatetype==3" class="mb-l">批量添加</div>
+        <div v-show="operatetype==4" class="mb-l">段落识别</div>
+        <div class="mb-r">
+          <div v-show="operatetype!=2" class="mb-m">
+            <div class="mb-label">源节点名称</div>
+            <div class="mb-con">
+              <el-input v-model="batchcreate.sourcenodename"></el-input>
+              <span v-show="operatetype==3" class="mb-label">（只能添加一个）</span>
+              <span v-show="operatetype==1" class="mb-label">（多个以英文逗号隔开）</span>
+            </div>
+            <div class="mb-label" v-show="operatetype!==1">关系</div>
+            <div class="mb-con" v-show="operatetype!==1">
+              <el-input v-model="batchcreate.relation"></el-input>
+              <div class="mb-label">（只能添加一个）</div>
+            </div>
+          </div>
+          <div v-show="operatetype!=1" class="mb-m">
+            <div class="mb-label">子节点名称</div>
+            <div class="mb-con">
+              <el-input v-model="batchcreate.targetnodenames"></el-input>
+              <span class="mb-label" v-show="operatetype==3">（多个以英文逗号隔开,可不填）</span>
+              <span class="mb-label" v-show="operatetype==2">（多个以英文逗号隔开）</span>
+            </div>
+          </div>
+          <div class="mb-m tc">
+            <el-button v-show="operatetype==1" type="primary" @click="batchcreatesamenode">确定</el-button>
+            <el-button v-show="operatetype==2" type="primary" @click="batchcreatechildnode">确定</el-button>
+            <el-button v-show="operatetype==3" type="primary" @click="batchcreatenode">确定</el-button>
+            <el-button @click="resetsubmit">取消</el-button>
+          </div>
+        </div>
+      </el-dialog>
+      <!-- 底部over -->
+    </div>
+    <!-- 右侧over -->
+    <!-- 空白处右键 -->
+    <ul class="el-dropdown-menu el-popper blankmenubar" id="blank_menubar" style="display: none;">
+      <li class="el-dropdown-menu__item" @click="btnaddsingle">
+        <!-- <svg class="icon" aria-hidden="true">
+          <use xlink:href="#icon-jiedian" />
+        </svg> -->
+        <span class="pl-15">添加节点</span>
+      </li>
+      <li class="el-dropdown-menu__item" @click="btnquickaddnode">
+        <!-- <svg class="icon" aria-hidden="true">
+          <use xlink:href="#icon-add-rd" />
+        </svg> -->
+        <span class="pl-15">快速添加</span>
+      </li>
+      <li class="el-dropdown-menu__item" @click="btnquickaddnode">
+        <!--		delete_node_and_relationship-->
+        <!-- <svg class="icon" aria-hidden="true">
+          <use xlink:href="#icon-shuchu" />
+        </svg> -->
+        <span class="pl-15">删除节点</span>
+      </li>
+    </ul>
+    <!-- 连线按钮组 -->
+    <ul class="el-dropdown-menu el-popper linkmenubar" id="link_menubar" style="display: none;">
+      <li class="el-dropdown-menu__item" @click="updatelinkName">
+        <!-- <svg class="icon" aria-hidden="true">
+          <use xlink:href="#icon-editor" />
+        </svg> -->
+        <span class="pl-15">编辑</span>
+      </li>
+      <li class="el-dropdown-menu__item" @click="deletelink">
+        <!-- <svg class="icon" aria-hidden="true">
+          <use xlink:href="#icon-shanchu" />
+        </svg> -->
+        <span class="pl-15">删除</span>
+      </li>
+    </ul>
+    <!-- 富文本展示 -->
+    <div id="richContainer" style="display: none;width: 400px">
+      <div class="mind-fj-box" v-show="showImageList.length>0 ||editorcontent!=''">
+        <div class="mind-carousel" v-show="showImageList.length>0">
+          <el-carousel height="197px" :interval="2000" arrow="always">
+            <el-carousel-item v-for="item in showImageList" :key="item.ID">
+              <div class="carous-img">
+                <img  :src="item.FileName" alt="">
+              </div>
+            </el-carousel-item>
+          </el-carousel>
+        </div>
+        <el-scrollbar v-show="editorcontent!=''" class="mind-fj-p">
+          <p v-html="editorcontent" ></p>
+        </el-scrollbar>
+      </div>
     </div>
   </div>
 </template>
@@ -111,8 +368,8 @@
 <script>
 import { mapGetters } from "vuex";
 import $ from "jquery";
-import * as d3 from "d3";
 import _ from "lodash";
+import * as d3 from 'd3';
 
 export default {
   name: "graph",
@@ -225,7 +482,8 @@ export default {
       dialogFormVisible: false,
       exportFormVisible: false,
       headers: {},
-      uploadurl: "/importgraph"
+      uploadurl: "/importgraph",
+      zoomHandler: null
     };
   },
   filters: {
@@ -242,7 +500,7 @@ export default {
     var header = $("meta[name='_csrf_header']").attr("content");
     var str = '{ "' + header + '": "' + token + '"}';
     this.headers = eval("(" + str + ")");
-    //this.initJqEvents();
+    this.initJqEvents();
     this.initgraph();
   },
   created() {
@@ -250,6 +508,7 @@ export default {
   },
   methods: {
     initJqEvents() {
+      var _this = this;
       $(".blankmenubar").click(function() {
         $("#blank_menubar").hide();
       });
@@ -257,10 +516,11 @@ export default {
         $("#blank_menubar").hide();
       });
       $(".graphcontainer").bind("contextmenu", function(event) {
-        app.svg.selectAll(".buttongroup").classed("circle_opreate", true);
+        _this.svg.selectAll(".buttongroup").classed("circle_opreate", true);
         var left = event.clientX;
         var top = event.clientY;
-        document.getElementById("blank_menubar").style.position = "absolute";
+        console.log(left,top);
+        document.getElementById("blank_menubar").style.position = "fixed";
         document.getElementById("blank_menubar").style.left = left + "px";
         document.getElementById("blank_menubar").style.top = top + "px";
         $("#blank_menubar").show();
@@ -279,14 +539,14 @@ export default {
             $(event.target).parents("#jsoncontainer").length > 0
           )
         ) {
-          app.jsonshow = false;
+          _this.jsonshow = false;
         }
         var cursor = document.getElementById("graphcontainer").style.cursor;
         if (cursor == "crosshair") {
           d3.select(".graphcontainer").style("cursor", "");
-          app.txx = event.offsetX;
-          app.tyy = event.offsetY;
-          app.createSingleNode();
+          _this.txx = event.offsetX;
+          _this.tyy = event.offsetY;
+          _this.createSingleNode();
         }
         event.preventDefault();
       });
@@ -309,7 +569,7 @@ export default {
             $(event.target).parents("#batchcreateform").length > 0
           )
         ) {
-          app.isbatchcreate = false;
+          _this.isbatchcreate = false;
         }
         if (
           !(
@@ -358,7 +618,7 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: contextRoot + "getcypherresult",
+        url: "/getcypherresult",
         success: function(result) {
           if (result.code == 200) {
             _this.graph.nodes = result.data.node;
@@ -441,7 +701,7 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: contextRoot + "getnodedetail",
+        url: "/getnodedetail",
         success: function(result) {
           if (result.code == 200) {
             _this.editorcontent = result.data.content;
@@ -462,7 +722,7 @@ export default {
         data: JSON.stringify(data),
         contentType: "application/json; charset=UTF-8",
         type: "POST",
-        url: contextRoot + "savenodeimage",
+        url: "/savenodeimage",
         success: function(result) {
           if (result.code == 200) {
             _this.$message({
@@ -485,7 +745,7 @@ export default {
         data: JSON.stringify(data),
         contentType: "application/json; charset=UTF-8",
         type: "POST",
-        url: contextRoot + "savenodecontent",
+        url: "/savenodecontent",
         success: function(result) {
           if (result.code == 200) {
             _this.$message({
@@ -597,7 +857,7 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: contextRoot + "getrelationnodecount",
+        url: "/getrelationnodecount",
         success: function(result) {
           if (result.code == 200) {
             _this.selectnode.name = node.name;
@@ -619,7 +879,7 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: contextRoot + "getmorerelationnode",
+        url: "/getmorerelationnode",
         success: function(result) {
           if (result.code == 200) {
             var newnodes = result.data.node;
@@ -683,7 +943,7 @@ export default {
           $.ajax({
             data: data,
             type: "POST",
-            url: contextRoot + "deletedomain",
+            url: "/deletedomain",
             success: function(result) {
               if (result.code == 200) {
                 _this.getlabels();
@@ -718,7 +978,7 @@ export default {
           $.ajax({
             data: data,
             type: "POST",
-            url: contextRoot + "createdomain",
+            url: "/createdomain",
             success: function(result) {
               if (result.code == 200) {
                 _this.getlabels();
@@ -766,7 +1026,7 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: contextRoot + "getgraph",
+        url: "/getgraph",
         success: function(result) {
           if (result.code == 200) {
             _this.pageModel.nodeList.push.apply(
@@ -1036,7 +1296,7 @@ export default {
       // 鼠标滚轮缩放
       //_this.svg.call(d3.zoom().transform, d3.zoomIdentity);//缩放至初始倍数
       _this.svg.call(
-        d3.zoom().on("zoom", function() {
+        d3.zoom().on("zoom", () => {
           d3.select("#link_menubar").style("display", "none");
           d3.select("#nodedetail").style("display", "none");
           d3.selectAll(".node").attr("transform", d3.event.transform);
@@ -1077,7 +1337,8 @@ export default {
               _this.deletenode(out_buttongroup_id);
               break;
           }
-          ACTION = ""; //重置 ACTION
+          _this.nodebuttonAction = "";
+          //ACTION = ""; //重置 ACTION
         }
       });
       //按钮组事件绑定
@@ -1105,7 +1366,7 @@ export default {
         data: data,
         type: "POST",
         traditional: true,
-        url: contextRoot + "createnode",
+        url: "/createnode",
         success: function(result) {
           if (result.code == 200) {
             if (_this.graphEntity.uuid != 0) {
@@ -1137,7 +1398,7 @@ export default {
         data: data,
         type: "POST",
         traditional: true,
-        url: contextRoot + "createnode",
+        url: "/createnode",
         success: function(result) {
           if (result.code == 200) {
             d3.select(".graphcontainer").style("cursor", "");
@@ -1244,7 +1505,7 @@ export default {
       $.ajax({
         data: ajaxdata,
         type: "POST",
-        url: contextRoot + "updateCorrdOfNode",
+        url: "/updateCorrdOfNode",
         success: function(result) {
           if (result.code == 200) {
           }
@@ -1549,7 +1810,7 @@ export default {
           $.ajax({
             data: data,
             type: "POST",
-            url: contextRoot + "deletenode",
+            url: "/deletenode",
             success: function(result) {
               if (result.code == 200) {
                 _this.svg.selectAll(out_buttongroup_id).remove();
@@ -1604,7 +1865,7 @@ export default {
           $.ajax({
             data: data,
             type: "POST",
-            url: contextRoot + "deletelink",
+            url: "/deletelink",
             success: function(result) {
               if (result.code == 200) {
                 var j = -1;
@@ -1642,7 +1903,7 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: contextRoot + "create_link",
+        url: "/create_link",
         success: function(result) {
           if (result.code == 200) {
             var newship = result.data;
@@ -1671,7 +1932,7 @@ export default {
           $.ajax({
             data: data,
             type: "POST",
-            url: contextRoot + "updatelink",
+            url: "/updatelink",
             success: function(result) {
               if (result.code == 200) {
                 var newship = result.data;
@@ -1709,7 +1970,7 @@ export default {
           $.ajax({
             data: data,
             type: "POST",
-            url: contextRoot + "updatenodename",
+            url: "/updatenodename",
             success: function(result) {
               if (result.code == 200) {
                 if (d.uuid != 0) {
@@ -1803,7 +2064,7 @@ export default {
       $.ajax({
         data: { domain: _this.uploadparam.domain },
         type: "POST",
-        url: contextRoot + "exportgraph",
+        url: "/exportgraph",
         success: function(result) {
           if (result.code == 200) {
             _this.exportFormVisible = false;
@@ -1857,7 +2118,7 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: contextRoot + "batchcreatenode",
+        url: "/batchcreatenode",
         success: function(result) {
           if (result.code == 200) {
             _this.isbatchcreate = false;
@@ -1901,7 +2162,7 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: contextRoot + "batchcreatechildnode",
+        url: "/batchcreatechildnode",
         success: function(result) {
           if (result.code == 200) {
             _this.isbatchcreate = false;
@@ -1943,7 +2204,7 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: contextRoot + "batchcreatesamenode",
+        url: "/batchcreatesamenode",
         success: function(result) {
           if (result.code == 200) {
             _this.isbatchcreate = false;
@@ -2074,7 +2335,6 @@ ul {
   background: rgba(198, 226, 255, 0.2);
   display: none;
 }
-
 
 text {
   cursor: pointer;
