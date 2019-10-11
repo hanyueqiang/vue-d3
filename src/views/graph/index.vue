@@ -11,7 +11,7 @@
             :key="m.id"
             href="javascript:void(0)"
           >
-            <el-tag closable style="margin:2px" @close="deletedomain(m.id,m.name)">{{m.name}}</el-tag>
+            <el-tag closable style="margin:2px" effect="dark" :type="domain == m.name ? 'success': ''" @close="deletedomain(m.id,m.name)">{{m.name}}</el-tag>
           </a>
           <el-button
             v-if="pageModel.pageIndex<pageModel.totalPage"
@@ -1365,9 +1365,10 @@ export default {
               _this.selectsourcenodeid = d.uuid;
               break;
             case "DELETE":
-              _this.selectnodeid = d.uuid;
+              //_this.selectnodeid = d.uuid;
+              _this.selectnodeid = d.id;
               var out_buttongroup_id = ".out_buttongroup_" + i;
-              _this.deletenode(out_buttongroup_id);
+              _this.deletenode(out_buttongroup_id, d.labelName);
               break;
           }
           _this.nodebuttonAction = "";
@@ -1792,10 +1793,11 @@ export default {
       });
       linkEnter.on("contextmenu", function(d) {
         var cc = $(this).offset();
-        app.selectnodeid = d.lk.uuid;
-        app.selectlinkname = d.lk.name;
+        //app.selectnodeid = d.lk.uuid;
+        _this.selectnodeid = d.lk.relationId;
+        _this.selectlinkname = d.lk.name;
         d3.select("#link_menubar")
-          .style("position", "absolute")
+          .style("position", "fixed")
           .style("left", cc.left + "px")
           .style("top", cc.top + "px")
           .style("display", "block");
@@ -1851,7 +1853,7 @@ export default {
 
       return linktextEnter;
     },
-    deletenode(out_buttongroup_id) {
+    deletenode(out_buttongroup_id, labelName) {
       var _this = this;
       _this
         .$confirm(
@@ -1864,10 +1866,12 @@ export default {
           }
         )
         .then(function() {
-          var data = { domain: _this.domain, nodeid: _this.selectnodeid };
+          //var data = { domain: _this.domain, nodeid: _this.selectnodeid };
+          var data = { id: _this.selectnodeid, labelName };
           $.ajax({
-            data: data,
+            data: JSON.stringify(data),
             type: "POST",
+            contentType: 'application/json',
             url: "/deletenode",
             success: function(result) {
               if (result.code == 200) {
@@ -1885,7 +1889,7 @@ export default {
                 // 找到对应的节点索引
                 var j = -1;
                 for (var i = 0; i < _this.graph.nodes.length; i++) {
-                  if (_this.graph.nodes[i].uuid == _this.selectnodeid) {
+                  if (_this.graph.nodes[i].id == _this.selectnodeid) {
                     j = i;
                     break;
                   }
@@ -1919,16 +1923,18 @@ export default {
         type: "warning"
       })
         .then(function() {
-          var data = { domain: _this.domain, shipid: _this.selectnodeid };
+          //var data = { domain: _this.domain, shipid: _this.selectnodeid };
+          let data = { relationId: _this.selectnodeid };
           $.ajax({
-            data: data,
+            data: JSON.stringify(data),
             type: "POST",
+            contentType: 'application/json',
             url: "/deletelink",
             success: function(result) {
               if (result.code == 200) {
                 var j = -1;
                 for (var i = 0; i < _this.graph.links.length; i++) {
-                  if (_this.graph.links[i].uuid == _this.selectnodeid) {
+                  if (_this.graph.links[i].relationId == _this.selectnodeid) {
                     j = i;
                     break;
                   }
@@ -1938,6 +1944,10 @@ export default {
                   _this.graph.links.splice(i, 1);
                   _this.updategraph();
                   _this.isdeletelink = false;
+                  _this.$message({
+                    type: "success",
+                    message: "操作成功!"
+                  });
                 }
               }
             }
@@ -1964,10 +1974,22 @@ export default {
         url: "/create_link",
         success: function(result) {
           if (result.code == 200) {
-            var newship = result.data;
-            _this.graph.links.push(newship);
-            _this.updategraph();
+            let newship = result.data;
+            if(newship.uuid) {
+              _this.graph.links.push(newship);
+              _this.updategraph();
+            }else {
+              _this.$message({
+                type: "info",
+                message: "无法创建关系"
+              });
+            }
             _this.isaddlink = false;
+          }else {
+            _this.$message({
+              type: "info",
+              message: "无法创建关系"
+            });
           }
         }
       });
