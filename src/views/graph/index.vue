@@ -45,7 +45,7 @@
             <el-input
               placeholder="请输入内容"
               v-model="nodename"
-              @keyup.enter.native
+              @keyup.enter.native="getdomaingraph(0)"
               class="input-with-select"
             >
               <el-button slot="append" icon="el-icon-search" @click="getdomaingraph(0)"></el-button>
@@ -64,6 +64,14 @@
               >{{m.size}}</a>
             </span>
           </span>
+          <ul class="color-represent" v-show="domain!=''">
+            <li
+              v-for="(m, index) in colorRepresentList"
+              :key="index"
+              :style="{ background: m.color }"
+              class="color-represent-single"
+            >{{m.name}}</li>
+          </ul>
         </div>
         <div class="fr">
           <a href="javascript:void(0)" @click="requestFullScreen" class="svg-a-sm">全屏</a>
@@ -96,7 +104,7 @@
       <!-- 中部 -->
       <el-scrollbar class="mind-cen" id="graphcontainerdiv">
         <div id="nodedetail" class="node_detail">
-          <h5>详细数据</h5>
+          <span class="node_pd">详细数据: </span>
           <span class="node_pd" v-for="(m,k) in nodedetail" :key="k">{{k}}:{{m}}</span>
         </div>
         <el-scrollbar v-show="jsonshow" id="jsoncontainer" class="jsoncontainer">
@@ -270,6 +278,7 @@
         :title="operatenameformat(operatetype)"
         :visible.sync="isbatchcreate"
         width="30%"
+        :append-to-body="true"
       >
         <div v-show="operatetype==1" class="mb-l">添加同级</div>
         <div v-show="operatetype==2" class="mb-l">添加下级</div>
@@ -483,7 +492,24 @@ export default {
       exportFormVisible: false,
       headers: {},
       uploadurl: "/importgraph",
-      zoomHandler: null
+      colorRepresentList: [
+        {
+          name: "科室",
+          color: "#ff4500"
+        },
+        {
+          name: "症状",
+          color: "#f16667"
+        },
+        {
+          name: "伴随症状",
+          color: "#d9c8ae"
+        },
+        {
+          name: "疾病",
+          color: "#57c7e3"
+        },
+      ]
     };
   },
   filters: {
@@ -1053,13 +1079,13 @@ export default {
           d3
             .forceLink()
             .distance(function(d) {
-              return Math.floor(Math.random() * (700 - 200)) + 200;
+              return Math.floor(Math.random() * 300) + 100;
             })
             .id(function(d) {
               return d.uuid;
             })
         )
-        .force("charge", d3.forceManyBody().strength(-400))
+        .force("charge", d3.forceManyBody().strength(-300).distanceMin(-30))
         .force("collide", d3.forceCollide())
         .force("center", d3.forceCenter(width / 2, (height - 200) / 2));
       this.linkGroup = this.svg.append("g").attr("class", "line");
@@ -1200,6 +1226,13 @@ export default {
       nodetext.exit().remove();
       var nodetextEnter = _this.drawnodetext(nodetext);
       nodetext = nodetextEnter.merge(nodetext).text(function(d) {
+        //return d.name;
+        if (typeof d.name == "undefined") return "";
+        let textLength = d.name.length;
+        if (textLength > 4) {
+          var s = d.name.slice(0, 4) + "...";
+          return s;
+        }
         return d.name;
       });
       nodetext
@@ -1430,6 +1463,28 @@ export default {
         .attr("d", arrow_path)
         .attr("fill", "#fce6d4");
     },
+    setFillColor(labelName) {
+      switch(labelName) {
+        case '科室': return '#ff4500';
+        case '病史': return '#4c8eda';
+        case '家族史': return '#ffc454';
+        case '症状': return '#f16667';
+        case '伴随症状': return '#d9c8ae';
+        case '疾病': return '#57c7e3';
+        default: return '#ff4500';
+      }
+    },
+    setStrokeColor(labelName) {
+      switch(labelName) {
+        case '科室': return '#ff4500';
+        case '病史': return '#4c8eda';
+        case '家族史': return '#ffc454';
+        case '症状': return '#eb2728';
+        case '伴随症状': return '#c0a378';
+        case '疾病': return '#5db665';
+        default: return '#ff4500';
+      }
+    },
     addnodebutton(r) {
       //先删除所有为节点自定义的按钮组
       d3.selectAll("svg >defs").remove();
@@ -1528,14 +1583,16 @@ export default {
         if (typeof d.color != "undefined" && d.color != "") {
           return d.color;
         }
-        return "#ff4500";
+        return _this.setFillColor(d.labelName);
+        //return "#ff4500";
       });
       nodeEnter.style("opacity", 0.8);
       nodeEnter.style("stroke", function(d) {
         if (typeof d.color != "undefined" && d.color != "") {
           return d.color;
         }
-        return "#ff4500";
+        return _this.setStrokeColor(d.labelName);
+        //return "#ff4500";
       });
       nodeEnter.style("stroke-opacity", 0.6);
       nodeEnter
@@ -1619,6 +1676,7 @@ export default {
         .style("fill", "#fff")
         .attr("dy", 4)
         .attr("font-family", "微软雅黑")
+        .attr("font-size", 12)//字体大小
         .attr("text-anchor", "middle")
         .text(function(d) {
           if (typeof d.name == "undefined") return "";
@@ -2249,7 +2307,7 @@ ul {
   display: flex;
 }
 .mind-l {
-  width: 260px;
+  width: 250px;
   float: left;
   background: #f7f9fc;
   height: 100%;
@@ -2306,13 +2364,13 @@ ul {
   border-bottom: 1px solid #ededed;
 }
 .mind-top .search {
-  width: 260px;
+  width: 230px;
   margin-right: 8px;
 }
 .svg-a-sm {
   font-size: 14px;
   color: #156498;
-  margin-right: 30px;
+  margin-right: 20px;
 }
 .mind-cen {
   height: calc(100% - 70px);
@@ -2322,18 +2380,6 @@ ul {
 }
 .sd-active {
   color: red !important;
-}
-.node_detail {
-  position: absolute;
-  width: 100%;
-  line-height: 35px;
-  -webkit-border-radius: 10px;
-  -moz-border-radius: 10px;
-  border-radius: 10px;
-  font-size: 12px;
-  padding-bottom: 10px;
-  background: rgba(198, 226, 255, 0.2);
-  display: none;
 }
 
 text {
@@ -2349,7 +2395,7 @@ circle {
   cursor: pointer;
 }
 #graphcontainerdiv {
-  background: #fff;
+  background: #F9FBFD;
 }
 .el-color-picker__panel {
   left: 812px !important;
@@ -2403,13 +2449,12 @@ circle {
   -moz-border-radius: 10px;
   border-radius: 10px;
   font-size: 12px;
-  padding-bottom: 10px;
   background: rgba(198, 226, 255, 0.2);
   display: none;
 }
 .node_pd {
   padding: 4px;
-  font-size: 13px;
+  font-size: 12px;
   font-family: -webkit-body;
   font-weight: 600;
 }
@@ -2440,5 +2485,23 @@ circle {
   height: 85px;
   padding: 0 22px;
   border-bottom: 1px solid #ededed;
+}
+.color-represent {
+  margin: 0;
+  padding-left: 12px;
+  line-height: 65px;
+}
+.color-represent-single {
+  display: inline-block;
+  line-height: 1em;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  user-select: none;
+  font-size: 12px;
+  margin-right: 5px;
+  cursor: pointer;
+  padding: 4px 7px 4px 9px;
+  border-radius: 20px;
 }
 </style>
