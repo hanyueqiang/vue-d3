@@ -66,7 +66,7 @@
           </span>
           <ul class="color-represent" v-show="domain!=''">
             <li
-              v-for="(m, index) in colorRepresentList"
+              v-for="(m, index) in colorModels"
               :key="index"
               :style="{ background: m.color }"
               class="color-represent-single"
@@ -171,80 +171,13 @@
           tab-position="top"
           v-model="propactiveName"
           @tab-click="prophandleClick"
-          style="margin: 10px"
         >
           <el-tab-pane label="属性编辑" name="propedit">
             <el-form :model="graphEntity">
-              <el-form-item label="节点名称" label-width="120px">
-                <el-input v-model="graphEntity.name" style="width:324px"></el-input>
-              </el-form-item>
-              <el-form-item label="选择颜色" label-width="120px">
-                <el-color-picker
-                  id="colorpicker"
-                  v-model="graphEntity.color"
-                  :predefine="predefineColors"
-                ></el-color-picker>
-              </el-form-item>
-              <el-form-item label="节点半径" label-width="120px">
-                <el-slider v-model="graphEntity.r" style="width:324px"></el-slider>
+              <el-form-item label="节点名称">
+                <el-input v-model="graphEntity.name"></el-input>
               </el-form-item>
             </el-form>
-          </el-tab-pane>
-          <el-tab-pane label="添加图片" name="propimage">
-            <el-form>
-              <el-form-item label="本地上传" label-width="120px">
-                <el-upload
-                  class
-                  :headers="headers"
-                  name="file"
-                  ref="upload"
-                  :action="uploadimageurl"
-                  accept=".jpg, .png"
-                  multiple
-                  :show-file-list="false"
-                  :data="uploadimageparam"
-                  :on-success="uploadsuccess"
-                  :auto-upload="true"
-                >
-                  <el-button slot="trigger" size="small" type="primary">选择</el-button>
-                </el-upload>
-              </el-form-item>
-              <el-form-item label="网络地址" label-width="120px">
-                <el-input v-model="netimageurl" style="width: 60%"></el-input>
-                <a href="javascript:void(0)" @click="addnetimage" class="cg">
-                  <!-- <svg class="icon" aria-hidden="true">
-                    <use xlink:href="#icon-add-s" />
-                  </svg>-->
-                </a>
-              </el-form-item>
-              <el-form-item label="已选图片" label-width="120px">
-                <ul class="el-upload-list el-upload-list--picture-card">
-                  <li
-                    v-for="(item, index) in nodeimagelist"
-                    :key="index"
-                    class="el-upload-list__item is-success"
-                  >
-                    <img :src="imageurlformat(item)" alt class="el-upload-list__item-thumbnail" />
-                    <label class="el-upload-list__item-status-label">
-                      <i class="el-icon-upload-success el-icon-check"></i>
-                    </label>
-                    <i class="el-icon-close" @click="imagehandleRemove(item)"></i>
-                    <span class="el-upload-list__item-actions">
-                      <span class="el-upload-list__item-preview">
-                        <i class="el-icon-zoom-in" @click="handlePictureCardPreview(item)"></i>
-                      </span>
-                      <span class="el-upload-list__item-delete">
-                        <i class="el-icon-delete" @click="imagehandleRemove(item)"></i>
-                      </span>
-                    </span>
-                  </li>
-                </ul>
-              </el-form-item>
-            </el-form>
-          </el-tab-pane>
-          <el-tab-pane label="添加描述" name="richtextedit">
-            <div ref="eidtorToolbar" id="eidtorToolbar" class="wange-toolbar"></div>
-            <div ref="eidtorContent" id="eidtorContent" class="wangeditor-form"></div>
           </el-tab-pane>
         </el-tabs>
         <div slot="footer" class="dialog-footer">
@@ -423,6 +356,19 @@ export default {
         "#1e90ff",
         "#c71585"
       ],
+      fillColorList: [
+        "#f16667",
+        "#ecb5c9",
+        "#c990c0",
+        "#569480",
+        "#57c7e3",
+        "#d9c8ae",
+        "#4c8eda",
+        "#ffc454",
+        "#da7194",
+        "#8dcc93"
+      ],
+      colorModels: [],
       defaultcr: 30,
       activeName: "",
       dataconfigactive: "",
@@ -1039,6 +985,15 @@ export default {
           });
         });
     },
+    setGraphColors(data) {
+      if(!data.nodeList || data.nodeList.length == 0) return;
+      //this.fillColorList 支持10种颜色，超过10种使用 #008B8B
+      let fillColors = this.fillColorList;
+      this.colorModels = data.nodeList.map((item, index) => {
+        let color = fillColors[index] ? fillColors[index] : '#008B8B';
+        return Object.assign({}, item, { color });
+      });
+    },
     getlabels() {
       var _this = this;
       var data = {};
@@ -1046,13 +1001,12 @@ export default {
         data: data,
         type: "POST",
         url: _this.contextRoot + "/getgraph",
-        //url: "/getgraph",
         success: function(result) {
           if (result.code == 200) {
             //_this.domainlabels=result.data;
             _this.pageModel = result.data;
-            _this.pageModel.totalPage =
-              parseInt((result.data.totalCount - 1) / result.data.pageSize) + 1;
+            _this.setGraphColors(result.data);
+            _this.pageModel.totalPage = parseInt((result.data.totalCount - 1) / result.data.pageSize) + 1;
           }
         }
       });
@@ -1209,7 +1163,8 @@ export default {
       linktext.exit().remove();
       var linktextEnter = _this.drawlinktext(linktext);
       linktext = linktextEnter.merge(linktext).text(function(d) {
-        return d.lk.name;
+        //return d.lk.name;
+        return d.lk.relation;
       });
       // 更新节点按钮组
       d3.selectAll(".nodebutton >g").remove();
@@ -1408,15 +1363,22 @@ export default {
     createnode() {
       var _this = this;
       var data = _this.graphEntity;
-      data.domain = _this.domain;
+      //data.domain = _this.domain;
+      let datas = {
+        id: data.id,
+        name: data.name,
+        labelName: data.labelName
+      }
       $.ajax({
-        data: data,
+        data: JSON.stringify(datas),
         type: "POST",
+        contentType: 'application/json',
         traditional: true,
         //url: "/createnode",
         url: _this.contextRoot + "/createnode",
         success: function(result) {
           if (result.code == 200) {
+            debugger
             if (_this.graphEntity.uuid != 0) {
               for (var i = 0; i < _this.graph.nodes.length; i++) {
                 if (_this.graph.nodes[i].uuid == _this.graphEntity.uuid) {
@@ -1477,17 +1439,16 @@ export default {
       arrowMarker
         .append("path")
         .attr("d", arrow_path)
-        .attr("fill", "#fce6d4");
+        //.attr("fill", "#fce6d4");
+        .attr("fill", "#a5abb6");
     },
     setFillColor(labelName) {
-      switch(labelName) {
-        case '科室': return '#ff4500';
-        case '病史': return '#4c8eda';
-        case '家族史': return '#ffc454';
-        case '症状': return '#f16667';
-        case '伴随症状': return '#d9c8ae';
-        case '疾病': return '#57c7e3';
-        default: return '#ff4500';
+      let colorModels = this.colorModels;
+      let obj = colorModels.find(item => item.name == labelName);
+      if(obj) {
+        return obj.color;
+      }else {
+        return '#008B8B';
       }
     },
     setStrokeColor(labelName) {
@@ -1604,15 +1565,16 @@ export default {
         return _this.setFillColor(d.labelName);
         //return "#ff4500";
       });
-      nodeEnter.style("opacity", 0.8);
+      nodeEnter.style("opacity", 0.9);
       nodeEnter.style("stroke", function(d) {
         if (typeof d.color != "undefined" && d.color != "") {
           return d.color;
         }
-        return _this.setStrokeColor(d.labelName);
+        //return _this.setStrokeColor(d.labelName);
+        return _this.setFillColor(d.labelName);
         //return "#ff4500";
       });
-      nodeEnter.style("stroke-opacity", 0.6);
+      nodeEnter.style("stroke-opacity", 1);
       nodeEnter
         .append("title") // 为每个节点设置title
         .text(function(d) {
@@ -1792,7 +1754,8 @@ export default {
         .enter()
         .append("path")
         .attr("stroke-width", 1)
-        .attr("stroke", "#fce6d4")
+        //.attr("stroke", "#fce6d4")
+        .attr("stroke", "#a5abb6")
         .attr("fill", "none")
         .attr("id", function(d) {
           return (
@@ -1801,7 +1764,8 @@ export default {
         })
         .attr("marker-end", "url(#arrow)"); // 箭头
       linkEnter.on("dblclick", function(d) {
-        _this.selectnodeid = d.lk.uuid;
+        //_this.selectnodeid = d.lk.uuid;
+        _this.selectnodeid = d.lk.relationId;
         if (_this.isdeletelink) {
           _this.deletelink();
         } else {
@@ -1823,7 +1787,7 @@ export default {
       });
       linkEnter.on("mouseenter", function(d) {
         d3.select(this)
-          .style("stroke-width", "6")
+          .style("stroke-width", "4")
           .attr("stroke", "#ff9e9e")
           .attr("marker-end", "url(#arrow)");
         _this.nodedetail = d.lk;
@@ -1832,7 +1796,8 @@ export default {
       linkEnter.on("mouseleave", function(d) {
         d3.select(this)
           .style("stroke-width", "1")
-          .attr("stroke", "#fce6d4")
+          //.attr("stroke", "#fce6d4")
+          .attr("stroke", "#a5abb6")
           .attr("marker-end", "url(#arrow)");
       });
       return linkEnter;
@@ -1841,7 +1806,8 @@ export default {
       var linktextEnter = link
         .enter()
         .append("text")
-        .style("fill", "#e3af85")
+        //.style("fill", "#e3af85")
+        .style("fill", "#333")
         .append("textPath")
         .attr("startOffset", "50%")
         .attr("text-anchor", "middle")
@@ -1850,23 +1816,26 @@ export default {
             "#invis_" + d.lk.sourceid + "-" + d.lk.name + "-" + d.lk.targetid
           );
         })
-        .style("font-size", 14)
+        .style("font-size", 12)
         .text(function(d) {
-          if (d.lk.name != "") {
-            return d.lk.name;
+          // if (d.lk.name != "") {
+          //   return d.lk.name;
+          // }
+          if (d.lk.relation != "") {
+            return d.lk.relation;
           }
         });
-
-      linktextEnter.on("mouseover", function(d) {
-        app.selectnodeid = d.lk.uuid;
-        app.selectlinkname = d.lk.name;
-        var cc = $(this).offset();
-        d3.select("#link_menubar")
-          .style("position", "absolute")
-          .style("left", cc.left + "px")
-          .style("top", cc.top + "px")
-          .style("display", "block");
-      });
+      //暂时先注释，hover连线展示弹窗
+      // linktextEnter.on("mouseover", function(d) {
+      //   app.selectnodeid = d.lk.uuid;
+      //   app.selectlinkname = d.lk.name;
+      //   var cc = $(this).offset();
+      //   d3.select("#link_menubar")
+      //     .style("position", "absolute")
+      //     .style("left", cc.left + "px")
+      //     .style("top", cc.top + "px")
+      //     .style("display", "block");
+      // });
 
       return linktextEnter;
     },
@@ -2023,29 +1992,38 @@ export default {
           inputValue: this.selectlinkname
         })
         .then(function(res) {
-          value = res.value;
-          var data = {
-            domain: _this.domain,
-            shipid: _this.selectnodeid,
-            shipname: value
+          let value = res.value;
+          // var data = {
+          //   domain: _this.domain,
+          //   shipid: _this.selectnodeid,
+          //   shipname: value
+          // };
+          let data = {
+            relationId: _this.selectnodeid,
+            relation: value
           };
           $.ajax({
-            data: data,
+            data: JSON.stringify(data),
             type: "POST",
-            //url: "/updatelink",
-            url: _this.contextRoot + "/updatelink",
+            contentType: "application/json",
+            //url: _this.contextRoot + "/updatelink",
+            url: _this.contextRoot + "/restapi/v1/relation/update",
             success: function(result) {
               if (result.code == 200) {
                 var newship = result.data;
                 _this.graph.links.forEach(function(m) {
-                  if (m.uuid == newship.uuid) {
-                    m.name = newship.name;
+                  if (m.relationId == newship.relationId) {
+                    m.relation = newship.relation;
                   }
                 });
                 _this.selectnodeid = 0;
                 _this.updategraph();
                 _this.isaddlink = false;
                 _this.selectlinkname = "";
+                _this.$message({
+                  type: "success",
+                  message: "操作成功"
+                });
               }
             }
           });
@@ -2362,8 +2340,8 @@ ul {
   border-right: 1px solid #d3e2ec;
 }
 .ml-ht {
-  height: 70px;
-  line-height: 70px;
+  height: 50px;
+  line-height: 50px;
   font-size: 16px;
   font-weight: 400;
   text-align: center;
@@ -2406,8 +2384,8 @@ ul {
   flex-direction: column;
 }
 .mind-top {
-  line-height: 70px;
-  height: 70px;
+  line-height: 50px;
+  height: 50px;
   padding: 0 22px;
   border-bottom: 1px solid #ededed;
 }
@@ -2492,10 +2470,8 @@ circle {
 .node_detail {
   position: absolute;
   width: 100%;
-  line-height: 35px;
-  -webkit-border-radius: 10px;
-  -moz-border-radius: 10px;
-  border-radius: 10px;
+  line-height: 24px;
+  padding: 8px;
   font-size: 12px;
   background: rgba(198, 226, 255, 0.2);
   display: none;
@@ -2537,7 +2513,7 @@ circle {
 .color-represent {
   margin: 0;
   padding-left: 12px;
-  line-height: 65px;
+  line-height: 50px;
 }
 .color-represent-single {
   display: inline-block;
