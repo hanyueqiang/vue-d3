@@ -509,7 +509,8 @@ export default {
           name: "疾病",
           color: "#57c7e3"
         },
-      ]
+      ],
+      contextRoot: '/kgmaker'
     };
   },
   filters: {
@@ -644,7 +645,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/getcypherresult",
+        //url: "/getcypherresult",
+        url: _this.contextRoot + "/getcypherresult",
         success: function(result) {
           if (result.code == 200) {
             _this.graph.nodes = result.data.node;
@@ -691,7 +693,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/getnodecontent",
+        //url: "/getnodecontent",
+        url: _this.contextRoot + "/getnodecontent",
         success: function(result) {
           _this.editor.txt.html("");
           if (result.code == 200) {
@@ -708,7 +711,8 @@ export default {
         data: data,
         type: "POST",
         //url: contextRoot + "getnodeimage",
-        url: "/getnodeimage",
+        //url: "/getnodeimage",
+        url: _this.contextRoot + "/getnodeimage",
         success: function(result) {
           if (result.code == 200) {
             for (var i = 0; i < result.data.length; i++) {
@@ -727,7 +731,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/getnodedetail",
+        //url: "/getnodedetail",
+        url: _this.contextRoot + "/getnodedetail",
         success: function(result) {
           if (result.code == 200) {
             _this.editorcontent = result.data.content;
@@ -748,7 +753,8 @@ export default {
         data: JSON.stringify(data),
         contentType: "application/json; charset=UTF-8",
         type: "POST",
-        url: "/savenodeimage",
+        //url: "/savenodeimage",
+        url: _this.contextRoot + "/savenodeimage",
         success: function(result) {
           if (result.code == 200) {
             _this.$message({
@@ -771,7 +777,8 @@ export default {
         data: JSON.stringify(data),
         contentType: "application/json; charset=UTF-8",
         type: "POST",
-        url: "/savenodecontent",
+        //url: "/savenodecontent",
+        url: _this.contextRoot + "/savenodecontent",
         success: function(result) {
           if (result.code == 200) {
             _this.$message({
@@ -864,7 +871,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/getdomaingraph",
+        //url: "/getdomaingraph",
+        url: _this.contextRoot + "/getdomaingraph",
         success: function(result) {
           if (result.code == 200) {
             var graphModel = result.data;
@@ -883,7 +891,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/getrelationnodecount",
+        //url: "/getrelationnodecount",
+        url: _this.contextRoot + "/getrelationnodecount",
         success: function(result) {
           if (result.code == 200) {
             _this.selectnode.name = node.name;
@@ -905,7 +914,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/getmorerelationnode",
+        //url: "/getmorerelationnode",
+        url: _this.contextRoot + "/getmorerelationnode",
         success: function(result) {
           if (result.code == 200) {
             var newnodes = result.data.node;
@@ -969,7 +979,8 @@ export default {
           $.ajax({
             data: data,
             type: "POST",
-            url: "/deletedomain",
+            //url: "/deletedomain",
+            url: _this.contextRoot + "/deletedomain",
             success: function(result) {
               if (result.code == 200) {
                 _this.getlabels();
@@ -1004,7 +1015,8 @@ export default {
           $.ajax({
             data: data,
             type: "POST",
-            url: "/createdomain",
+            //url: "/createdomain",
+            url: _this.contextRoot + "/createdomain",
             success: function(result) {
               if (result.code == 200) {
                 _this.getlabels();
@@ -1033,8 +1045,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        //url: contextRoot+"getlabels",
-        url: "/getgraph",
+        url: _this.contextRoot + "/getgraph",
+        //url: "/getgraph",
         success: function(result) {
           if (result.code == 200) {
             //_this.domainlabels=result.data;
@@ -1052,7 +1064,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/getgraph",
+        //url: "/getgraph",
+        url: _this.contextRoot + "/getgraph",
         success: function(result) {
           if (result.code == 200) {
             _this.pageModel.nodeList.push.apply(
@@ -1400,7 +1413,8 @@ export default {
         data: data,
         type: "POST",
         traditional: true,
-        url: "/createnode",
+        //url: "/createnode",
+        url: _this.contextRoot + "/createnode",
         success: function(result) {
           if (result.code == 200) {
             if (_this.graphEntity.uuid != 0) {
@@ -1432,7 +1446,8 @@ export default {
         data: data,
         type: "POST",
         traditional: true,
-        url: "/createnode",
+        //url: "/createnode",
+        url: _this.contextRoot + "/createnode",
         success: function(result) {
           if (result.code == 200) {
             d3.select(".graphcontainer").style("cursor", "");
@@ -1558,10 +1573,12 @@ export default {
       var fx = d.fx;
       var fy = d.fy;
       var ajaxdata = { domain: domain, uuid: uuid, fx: fx, fy: fy };
+      var _this = this;
       $.ajax({
         data: ajaxdata,
         type: "POST",
-        url: "/updateCorrdOfNode",
+        //url: "/updateCorrdOfNode",
+        url: _this.contextRoot + "/updateCorrdOfNode",
         success: function(result) {
           if (result.code == 200) {
           }
@@ -1872,7 +1889,8 @@ export default {
             data: JSON.stringify(data),
             type: "POST",
             contentType: 'application/json',
-            url: "/deletenode",
+            //url: "/deletenode",
+            url: _this.contextRoot + "/deletenode",
             success: function(result) {
               if (result.code == 200) {
                 _this.svg.selectAll(out_buttongroup_id).remove();
@@ -1929,7 +1947,8 @@ export default {
             data: JSON.stringify(data),
             type: "POST",
             contentType: 'application/json',
-            url: "/deletelink",
+            //url: "/deletelink",
+            url: _this.contextRoot + "/deletelink",
             success: function(result) {
               if (result.code == 200) {
                 var j = -1;
@@ -1971,7 +1990,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/create_link",
+        //url: "/create_link",
+        url: _this.contextRoot + "/create_link",
         success: function(result) {
           if (result.code == 200) {
             let newship = result.data;
@@ -2012,7 +2032,8 @@ export default {
           $.ajax({
             data: data,
             type: "POST",
-            url: "/updatelink",
+            //url: "/updatelink",
+            url: _this.contextRoot + "/updatelink",
             success: function(result) {
               if (result.code == 200) {
                 var newship = result.data;
@@ -2050,7 +2071,8 @@ export default {
           $.ajax({
             data: data,
             type: "POST",
-            url: "/updatenodename",
+            //url: "/updatenodename",
+            url: _this.contextRoot + "/updatenodename",
             success: function(result) {
               if (result.code == 200) {
                 if (d.uuid != 0) {
@@ -2144,7 +2166,8 @@ export default {
       $.ajax({
         data: { domain: _this.uploadparam.domain },
         type: "POST",
-        url: "/exportgraph",
+        //url: "/exportgraph",
+        url: _this.contextRoot + "/exportgraph",
         success: function(result) {
           if (result.code == 200) {
             _this.exportFormVisible = false;
@@ -2198,7 +2221,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/batchcreatenode",
+        //url: "/batchcreatenode",
+        url: _this.contextRoot + "/batchcreatenode",
         success: function(result) {
           if (result.code == 200) {
             _this.isbatchcreate = false;
@@ -2242,7 +2266,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/batchcreatechildnode",
+        //url: "/batchcreatechildnode",
+        url: _this.contextRoot + "/batchcreatechildnode",
         success: function(result) {
           if (result.code == 200) {
             _this.isbatchcreate = false;
@@ -2284,7 +2309,8 @@ export default {
       $.ajax({
         data: data,
         type: "POST",
-        url: "/batchcreatesamenode",
+        //url: "/batchcreatesamenode",
+        url: _this.contextRoot + "/batchcreatesamenode",
         success: function(result) {
           if (result.code == 200) {
             _this.isbatchcreate = false;
