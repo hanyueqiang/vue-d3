@@ -1052,7 +1052,7 @@ export default {
               return d.uuid;
             })
         )
-        .force("charge", d3.forceManyBody().strength(-300).distanceMin(-30))
+        .force("charge", d3.forceManyBody().strength(-150).distanceMin(-40))
         .force("collide", d3.forceCollide())
         .force("center", d3.forceCenter(width / 2, (height - 200) / 2));
       this.linkGroup = this.svg.append("g").attr("class", "line");
