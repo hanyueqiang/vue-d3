@@ -383,6 +383,8 @@ export default {
       selectnodename: "",
       selectsourcenodeid: 0,
       selecttargetnodeid: 0,
+      selectstartuuid: 0,
+      selectenduuid: 0,
       sourcenodex1: 0,
       sourcenodey1: 0,
       mousex: 0,
@@ -854,9 +856,10 @@ export default {
       this.isdeletelink = true;
       d3.select(".link").attr("class", "link linkdelete"); // 修改鼠标样式为"+"
     },
-    getmorenode() {
+    getmorenode(selectid) {
       var _this = this;
-      var data = { domain: _this.domain, nodeid: _this.selectnodeid };
+      //var data = { domain: _this.domain, nodeid: _this.selectnodeid };
+      var data = { domain: _this.domain, nodeid: selectid };
       $.ajax({
         data: data,
         type: "POST",
@@ -864,8 +867,8 @@ export default {
         url: _this.contextRoot + "/getmorerelationnode",
         success: function(result) {
           if (result.code == 200) {
-            var newnodes = result.data.node;
-            var newships = result.data.relationship;
+            var newnodes = result.data.node || [];
+            var newships = result.data.relationship || [];
             var oldnodescount = _this.graph.nodes.length;
             newnodes.forEach(function(m) {
               var sobj = _this.graph.nodes.find(function(x) {
@@ -1046,13 +1049,13 @@ export default {
           d3
             .forceLink()
             .distance(function(d) {
-              return Math.floor(Math.random() * 300) + 100;
+              return Math.floor(Math.random() * 288) + 80;
             })
             .id(function(d) {
               return d.uuid;
             })
         )
-        .force("charge", d3.forceManyBody().strength(-150).distanceMin(-40))
+        .force("charge", d3.forceManyBody().strength(-180).distanceMin(-40))
         .force("collide", d3.forceCollide())
         .force("center", d3.forceCenter(width / 2, (height - 200) / 2));
       this.linkGroup = this.svg.append("g").attr("class", "line");
@@ -1321,7 +1324,7 @@ export default {
               _this.tyy = d.y;
               break;
             case "MORE":
-              _this.getmorenode();
+              _this.getmorenode(d.id);
               break;
             case "CHILD":
               _this.operatetype = 2;
@@ -1330,7 +1333,8 @@ export default {
               break;
             case "LINK":
               _this.isaddlink = true;
-              _this.selectsourcenodeid = d.uuid;
+              _this.selectstartuuid = d.uuid;
+              _this.selectsourcenodeid = d.id;
               break;
             case "DELETE":
               //_this.selectnodeid = d.uuid;
@@ -1378,7 +1382,6 @@ export default {
         url: _this.contextRoot + "/createnode",
         success: function(result) {
           if (result.code == 200) {
-            debugger
             if (_this.graphEntity.uuid != 0) {
               for (var i = 0; i < _this.graph.nodes.length; i++) {
                 if (_this.graph.nodes[i].uuid == _this.graphEntity.uuid) {
@@ -1535,19 +1538,19 @@ export default {
       var fy = d.fy;
       var ajaxdata = { domain: domain, uuid: uuid, fx: fx, fy: fy };
       var _this = this;
-      $.ajax({
-        data: ajaxdata,
-        type: "POST",
-        //url: "/updateCorrdOfNode",
-        url: _this.contextRoot + "/updateCorrdOfNode",
-        success: function(result) {
-          if (result.code == 200) {
-          }
-        },
-        error: function(XMLHttpRequest, textStatus, errorThrown) {
-          alert(errorThrown);
-        }
-      });
+      // $.ajax({
+      //   data: ajaxdata,
+      //   type: "POST",
+      //   //url: "/updateCorrdOfNode",
+      //   url: _this.contextRoot + "/updateCorrdOfNode",
+      //   success: function(result) {
+      //     if (result.code == 200) {
+      //     }
+      //   },
+      //   error: function(XMLHttpRequest, textStatus, errorThrown) {
+      //     alert(errorThrown);
+      //   }
+      // });
     },
     drawnode(node) {
       var _this = this;
@@ -1590,14 +1593,14 @@ export default {
             .style("display", "block");
           _this.editorcontent = "";
           _this.showImageList = [];
-          _this.getNodeDetail(d.uuid);
+          //_this.getNodeDetail(d.uuid);
         }, 2000);
       });
       nodeEnter.on("mouseout", function(d, i) {
         clearTimeout(_this.timer);
       });
       nodeEnter.on("dblclick", function(d) {
-        app.updatenodename(d); // 双击更新节点名称
+        _this.updatenodename(d); // 双击更新节点名称
       });
       nodeEnter.on("mouseenter", function(d) {
         var aa = d3.select(this)._groups[0][0];
@@ -1621,7 +1624,8 @@ export default {
         _this.selectnodename = d.name;
         // 添加连线状态
         if (_this.isaddlink) {
-          _this.selecttargetnodeid = d.uuid;
+          _this.selectenduuid = d.uuid;
+          _this.selecttargetnodeid = d.id;
           if (
             _this.selectsourcenodeid == _this.selecttargetnodeid ||
             _this.selectsourcenodeid == 0 ||
@@ -1631,10 +1635,13 @@ export default {
           _this.createlink(
             _this.selectsourcenodeid,
             _this.selecttargetnodeid,
-            "RE"
+            _this.selectstartuuid,
+            _this.selectenduuid
           );
           _this.selectsourcenodeid = 0;
           _this.selecttargetnodeid = 0;
+          _this.selectstartuuid = 0;
+          _this.selectenduuid = 0;
           d.fixed = false;
           d3.event.stopPropagation();
         }
@@ -1676,22 +1683,23 @@ export default {
             .style("display", "block");
           _this.editorcontent = "";
           _this.showImageList = [];
-          _this.getNodeDetail(d.uuid);
+          //_this.getNodeDetail(d.uuid);
         }, 3000);
       });
 
       nodetextenter.on("dblclick", function(d) {
-        app.updatenodename(d); // 双击更新节点名称
+        _this.updatenodename(d); // 双击更新节点名称
       });
       nodetextenter.on("click", function(d) {
         $("#link_menubar").hide(); // 隐藏空白处右键菜单
         _this.graphEntity = d;
         _this.selectnodeid = d.uuid;
         // 更新工具栏节点信息
-        _this.getcurrentnodeinfo(d);
+        //_this.getcurrentnodeinfo(d);
         // 添加连线状态
         if (_this.isaddlink) {
-          _this.selecttargetnodeid = d.uuid;
+          _this.selectenduuid = d.uuid;
+          _this.selecttargetnodeid = d.id;
           if (
             _this.selectsourcenodeid == _this.selecttargetnodeid ||
             _this.selectsourcenodeid == 0 ||
@@ -1701,10 +1709,13 @@ export default {
           _this.createlink(
             _this.selectsourcenodeid,
             _this.selecttargetnodeid,
-            "RE"
+            _this.selectstartuuid,
+            _this.selectenduuid
           );
           _this.selectsourcenodeid = 0;
           _this.selecttargetnodeid = 0;
+          _this.selectstartuuid = 0;
+          _this.selectenduuid = 0;
           d.fixed = false;
           d3.event.stopPropagation();
         }
@@ -1948,40 +1959,58 @@ export default {
           });
         });
     },
-    createlink(sourceId, targetId, ship) {
+    createlink(sourceId, targetId, startuuid, enduuid) {
       var _this = this;
-      var data = {
-        domain: _this.domain,
-        sourceid: sourceId,
-        targetid: targetId,
-        ship: ""
-      };
-      $.ajax({
-        data: data,
-        type: "POST",
-        //url: "/create_link",
-        url: _this.contextRoot + "/create_link",
-        success: function(result) {
-          if (result.code == 200) {
-            let newship = result.data;
-            if(newship.uuid) {
-              _this.graph.links.push(newship);
-              _this.updategraph();
-            }else {
-              _this.$message({
-                type: "info",
-                message: "无法创建关系"
-              });
+      //this.selectlinkname = '';
+      // var data = {
+      //   domain: _this.domain,
+      //   sourceid: sourceId,
+      //   targetid: targetId,
+      //   ship: ""
+      // };
+      _this
+        .$prompt("请输入关系名称", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          inputValue: this.selectlinkname
+        })
+        .then(function(res) {
+          let value = res.value;
+          var data = {
+            startId: sourceId,
+            endId: targetId,
+            sourceid: startuuid,
+            targetid: enduuid,
+            relation: value
+          };
+          $.ajax({
+            data: JSON.stringify(data),
+            type: "POST",
+            //url: "/create_link",
+            url: _this.contextRoot + "/restapi/v1/relation/add",
+            contentType: "application/json",
+            success: function(result) {
+              if (result.code == 200) {
+                let newship = result.data;
+                if(newship.relationId) {
+                  _this.graph.links.push(newship);
+                  _this.updategraph();
+                }else {
+                  _this.$message({
+                    type: "info",
+                    message: "无法创建关系"
+                  });
+                }
+                _this.isaddlink = false;
+              }else {
+                _this.$message({
+                  type: "info",
+                  message: "无法创建关系"
+                });
+              }
             }
-            _this.isaddlink = false;
-          }else {
-            _this.$message({
-              type: "info",
-              message: "无法创建关系"
-            });
-          }
-        }
-      });
+          });
+        });
     },
     updatelinkName() {
       var _this = this;
