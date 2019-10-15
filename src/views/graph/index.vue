@@ -11,7 +11,13 @@
             :key="m.id"
             href="javascript:void(0)"
           >
-            <el-tag closable style="margin:2px" effect="dark" :type="domain == m.name ? 'success': ''" @close="deletedomain(m.id,m.name)">{{m.name}}</el-tag>
+            <el-tag
+              closable
+              style="margin:2px"
+              effect="dark"
+              :type="domain == m.name ? 'success': ''"
+              @close="deletedomain(m.id,m.name)"
+            >{{m.name}}</el-tag>
           </a>
           <el-button
             v-if="pageModel.pageIndex<pageModel.totalPage"
@@ -104,7 +110,7 @@
       <!-- 中部 -->
       <el-scrollbar class="mind-cen" id="graphcontainerdiv">
         <div id="nodedetail" class="node_detail">
-          <span class="node_pd">详细数据: </span>
+          <span class="node_pd">详细数据:</span>
           <span class="node_pd" v-for="(m,k) in nodedetail" :key="k">{{k}}:{{m}}</span>
         </div>
         <el-scrollbar v-show="jsonshow" id="jsoncontainer" class="jsoncontainer">
@@ -165,7 +171,13 @@
           <el-button type="primary" @click="exportcsv">确 定</el-button>
         </el-form>
       </el-dialog>
-      <el-dialog id="editform" title="属性编辑" :visible.sync="isedit" width="30%" :append-to-body="true">
+      <el-dialog
+        id="editform"
+        title="属性编辑"
+        :visible.sync="isedit"
+        width="30%"
+        :append-to-body="true"
+      >
         <el-tabs
           type="card"
           tab-position="top"
@@ -204,6 +216,36 @@
             @click="createnode"
           >创建</el-button>
           <el-button @click="resetsubmit">取消</el-button>
+        </div>
+      </el-dialog>
+      <!-- 属性编辑 -->
+      <el-dialog
+        id="attrcreateform"
+        title="属性编辑"
+        :visible.sync="isATTRcreate"
+        width="540px"
+        :append-to-body="true"
+      >
+        <div class="mb-r">
+          <div class="mb-m">
+            <div class="user-attr-define">自定义属性(最多添加5个)</div>
+            <div v-for="(item, index) in newAttrFormModel" :key="index" class="user-attrs">
+              <span class="user-attrs-span">
+                key:
+                <el-input class="user-attrs-item" v-model="item.key" v-bind:disabled="attrDisabledHandle(item.key)"></el-input>
+              </span>
+              <span class="user-attrs-span">
+                value:
+                <el-input class="user-attrs-item" v-model="item.value" v-bind:disabled="attrDisabledHandle(item.key)"></el-input>
+              </span>
+              <span class="user-attrs-del" @click="onDelAttrVal(index)" v-show="!attrDisabledHandle(item.key)">删除</span>
+            </div>
+            <el-button type="primary" @click="addUserAttrHandle" :disabled="newAttrFormModel.length >= 10">添加自定义属性</el-button>
+          </div>
+        </div>
+        <div slot="footer" class="dialog-footer">
+          <el-button type="primary" @click="attrformSubmit">确定</el-button>
+          <el-button @click="resetattrCancel">取消</el-button>
         </div>
       </el-dialog>
       <el-dialog
@@ -379,6 +421,7 @@ export default {
       isaddlink: false,
       isdeletelink: false,
       isbatchcreate: false,
+      isATTRcreate: false,
       selectnodeid: 0,
       selectnodename: "",
       selectsourcenodeid: 0,
@@ -426,6 +469,9 @@ export default {
         targetnodenames: "",
         relation: ""
       },
+      attrDisabledList: ['id', 'name', 'labelName', 'status', 'uuid'],
+      newAttrFormModel: [],
+      originalNodesData:[],
       graphEntity: {
         uuid: 0,
         name: "",
@@ -456,9 +502,9 @@ export default {
         {
           name: "疾病",
           color: "#57c7e3"
-        },
+        }
       ],
-      contextRoot: '/kgmaker'
+      contextRoot: "/kgmaker"
     };
   },
   filters: {
@@ -482,6 +528,21 @@ export default {
     this.getlabels();
   },
   methods: {
+    //删除一条属性编辑
+    onDelAttrVal(index) {
+      this.newAttrFormModel.splice(index, 1);
+    },
+    //属性编辑禁止
+    attrDisabledHandle(key) {
+      if(this.attrDisabledList.indexOf(key) != -1) {
+        return true;
+      }
+      return false;
+    },
+    addUserAttrHandle(event) {
+      this.newAttrFormModel.push({ key: "", value: "" });
+      event.preventDefault();
+    },
     initJqEvents() {
       var _this = this;
       $(".blankmenubar").click(function() {
@@ -826,6 +887,7 @@ export default {
             var graphModel = result.data;
             if (graphModel != null) {
               _this.graph.nodes = graphModel.node;
+              _this.originalNodesData = _.cloneDeep(graphModel.node);
               _this.graph.links = graphModel.relationship;
               _this.updategraph();
             }
@@ -989,11 +1051,11 @@ export default {
         });
     },
     setGraphColors(data) {
-      if(!data.nodeList || data.nodeList.length == 0) return;
+      if (!data.nodeList || data.nodeList.length == 0) return;
       //this.fillColorList 支持10种颜色，超过10种使用 #008B8B
       let fillColors = this.fillColorList;
       this.colorModels = data.nodeList.map((item, index) => {
-        let color = fillColors[index] ? fillColors[index] : '#008B8B';
+        let color = fillColors[index] ? fillColors[index] : "#008B8B";
         return Object.assign({}, item, { color });
       });
     },
@@ -1009,7 +1071,8 @@ export default {
             //_this.domainlabels=result.data;
             _this.pageModel = result.data;
             _this.setGraphColors(result.data);
-            _this.pageModel.totalPage = parseInt((result.data.totalCount - 1) / result.data.pageSize) + 1;
+            _this.pageModel.totalPage =
+              parseInt((result.data.totalCount - 1) / result.data.pageSize) + 1;
           }
         }
       });
@@ -1055,7 +1118,13 @@ export default {
               return d.uuid;
             })
         )
-        .force("charge", d3.forceManyBody().strength(-180).distanceMin(-40))
+        .force(
+          "charge",
+          d3
+            .forceManyBody()
+            .strength(-180)
+            .distanceMin(-40)
+        )
         .force("collide", d3.forceCollide())
         .force("center", d3.forceCenter(width / 2, (height - 200) / 2));
       this.linkGroup = this.svg.append("g").attr("class", "line");
@@ -1073,6 +1142,19 @@ export default {
         },
         "false"
       );
+    },
+    setAttrModels(id) {
+      //this.originalNodesData 原始数据
+      this.newAttrFormModel = [];
+      let jsonObj = this.originalNodesData.find(item => item.id == id);
+      if(jsonObj) {
+        for (let keys in jsonObj) {
+          this.newAttrFormModel.push({
+            key: keys,
+            value: jsonObj[keys]
+          });
+        }
+      }
     },
     updategraph() {
       var _this = this;
@@ -1331,6 +1413,11 @@ export default {
               _this.isbatchcreate = true;
               _this.isedit = false;
               break;
+            case "ATTR":
+              _this.setAttrModels(d.id);
+              _this.isATTRcreate = true;
+              _this.isedit = false;
+              break;
             case "LINK":
               _this.isaddlink = true;
               _this.selectstartuuid = d.uuid;
@@ -1355,7 +1442,8 @@ export default {
         _this.nodebuttonAction = "MORE";
       });
       _this.svg.selectAll(".action_2").on("click", function(d) {
-        _this.nodebuttonAction = "CHILD";
+        //_this.nodebuttonAction = "CHILD";
+        _this.nodebuttonAction = "ATTR";
       });
       _this.svg.selectAll(".action_3").on("click", function(d) {
         _this.nodebuttonAction = "LINK";
@@ -1372,11 +1460,11 @@ export default {
         id: data.id,
         name: data.name,
         labelName: data.labelName
-      }
+      };
       $.ajax({
         data: JSON.stringify(datas),
         type: "POST",
-        contentType: 'application/json',
+        contentType: "application/json",
         traditional: true,
         //url: "/createnode",
         url: _this.contextRoot + "/createnode",
@@ -1448,21 +1536,28 @@ export default {
     setFillColor(labelName) {
       let colorModels = this.colorModels;
       let obj = colorModels.find(item => item.name == labelName);
-      if(obj) {
+      if (obj) {
         return obj.color;
-      }else {
-        return '#008B8B';
+      } else {
+        return "#008B8B";
       }
     },
     setStrokeColor(labelName) {
-      switch(labelName) {
-        case '科室': return '#ff4500';
-        case '病史': return '#4c8eda';
-        case '家族史': return '#ffc454';
-        case '症状': return '#eb2728';
-        case '伴随症状': return '#c0a378';
-        case '疾病': return '#5db665';
-        default: return '#ff4500';
+      switch (labelName) {
+        case "科室":
+          return "#ff4500";
+        case "病史":
+          return "#4c8eda";
+        case "家族史":
+          return "#ffc454";
+        case "症状":
+          return "#eb2728";
+        case "伴随症状":
+          return "#c0a378";
+        case "疾病":
+          return "#5db665";
+        default:
+          return "#ff4500";
       }
     },
     addnodebutton(r) {
@@ -1497,7 +1592,7 @@ export default {
             return arc(d);
           })
           .attr("fill", "#D2D5DA")
-          .style("opacity", 0.6)
+          .style("opacity", 0.8)
           .attr("stroke", "#f0f0f4")
           .attr("stroke-width", 2);
         buttonEnter
@@ -1510,7 +1605,8 @@ export default {
             var zi = new Array();
             zi[0] = "编辑";
             zi[1] = "展开";
-            zi[2] = "追加";
+            // zi[2] = "追加";
+            zi[2] = "属性";
             zi[3] = "连线";
             zi[4] = "删除";
             return zi[i];
@@ -1594,7 +1690,7 @@ export default {
           _this.editorcontent = "";
           _this.showImageList = [];
           //_this.getNodeDetail(d.uuid);
-        }, 2000);
+        }, 1000);
       });
       nodeEnter.on("mouseout", function(d, i) {
         clearTimeout(_this.timer);
@@ -1663,7 +1759,7 @@ export default {
         .style("fill", "#fff")
         .attr("dy", 4)
         .attr("font-family", "微软雅黑")
-        .attr("font-size", 12)//字体大小
+        .attr("font-size", 12) //字体大小
         .attr("text-anchor", "middle")
         .text(function(d) {
           if (typeof d.name == "undefined") return "";
@@ -1868,7 +1964,7 @@ export default {
           $.ajax({
             data: JSON.stringify(data),
             type: "POST",
-            contentType: 'application/json',
+            contentType: "application/json",
             //url: "/deletenode",
             url: _this.contextRoot + "/deletenode",
             success: function(result) {
@@ -1926,7 +2022,7 @@ export default {
           $.ajax({
             data: JSON.stringify(data),
             type: "POST",
-            contentType: 'application/json',
+            contentType: "application/json",
             //url: "/deletelink",
             url: _this.contextRoot + "/deletelink",
             success: function(result) {
@@ -1992,17 +2088,17 @@ export default {
             success: function(result) {
               if (result.code == 200) {
                 let newship = result.data;
-                if(newship.relationId) {
+                if (newship.relationId) {
                   _this.graph.links.push(newship);
                   _this.updategraph();
-                }else {
+                } else {
                   _this.$message({
                     type: "info",
                     message: "无法创建关系"
                   });
                 }
                 _this.isaddlink = false;
-              }else {
+              } else {
                 _this.$message({
                   type: "info",
                   message: "无法创建关系"
@@ -2113,6 +2209,11 @@ export default {
       this.dataconfigactive = "";
       this.isbatchcreate = false;
       this.selectnodeid = 0;
+    },
+    //属性编辑取消
+    resetattrCancel() {
+      this.isATTRcreate = false;
+      this.newAttrFormModel = [];
     },
     resetentity() {
       this.graphEntity = {
@@ -2261,6 +2362,56 @@ export default {
           }
         }
       });
+    },
+    //属性编辑提交
+    attrformSubmit() {
+      let _this = this;
+      let obj = {};
+      this.newAttrFormModel.map(e => {
+        if(e.key) {
+          obj[e.key] = e.value;
+        }
+      });
+      $.ajax({
+        data: JSON.stringify(obj),
+        type: "POST",
+        contentType: 'application/json',
+        url: _this.contextRoot + "/restapi/v1/attribute/node/put",
+        success: function(result) {
+          if (result.code == 200) {
+            _this.isATTRcreate = false;
+            let newnodeObj = result.data.exist;
+            let removeArr = result.data.remove;
+            _this.graph.nodes.forEach(item => {
+              if(item.id == newnodeObj.id) {
+                Object.assign(item, newnodeObj);
+                removeArr.forEach(v => {
+                  _this.$delete(item, v);
+                });
+              }
+            });
+            _this.originalNodesData.forEach(e => {
+              if(e.id == newnodeObj.id) {
+                Object.assign(e, newnodeObj);
+                removeArr.forEach(v => {
+                  _this.$delete(e, v);
+                });
+              }
+            });
+            _this.updategraph();
+            _this.$message({
+              message: "操作成功",
+              type: "success"
+            });
+          }else {
+            _this.$message({
+              message: "保存失败",
+              type: "info"
+            });
+          }
+        }
+      });
+
     },
     batchcreatechildnode() {
       var _this = this;
@@ -2450,7 +2601,7 @@ circle {
   cursor: pointer;
 }
 #graphcontainerdiv {
-  background: #F9FBFD;
+  background: #f9fbfd;
 }
 .el-color-picker__panel {
   left: 812px !important;
@@ -2556,5 +2707,27 @@ circle {
   cursor: pointer;
   padding: 4px 7px 4px 9px;
   border-radius: 20px;
+}
+.user-attrs-item {
+  width: 140px;
+}
+.user-attrs-span {
+  margin-right: 15px;
+}
+.user-attrs {
+  margin: 8px 0;
+}
+.user-attr-define {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.user-attr-fixed {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+.user-attrs-del {
+  margin-left: 8px;
+  color: #409eff;
+  cursor: pointer;
 }
 </style>
