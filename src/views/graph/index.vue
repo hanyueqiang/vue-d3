@@ -49,8 +49,8 @@
             </el-button>-->
             <!-- <el-button slot="append" icon="el-icon-search" @click="getdomaingraph(0)"></el-button> -->
             <el-select v-model="selectRelation" class="search-select-first" @change="selectRelationHandle">
-              <el-option value="node" label="节点"></el-option>
-              <el-option value="relation" label="关系"></el-option>
+              <el-option value="NODE" label="节点"></el-option>
+              <el-option value="RELATION" label="关系"></el-option>
             </el-select>
             <el-select v-model="selectNodeRelation" class="search-select-second">
               <el-option
@@ -64,10 +64,10 @@
             <el-input
               placeholder="请输入内容"
               v-model="nodename"
-              @keyup.enter.native="getdomaingraph(0)"
+              @keyup.enter.native="getNodeSearchGraph(0)"
               class="input-with-select"
             >
-              <el-button slot="append" icon="el-icon-search" @click="getdomaingraph(0)"></el-button>
+              <el-button slot="append" icon="el-icon-search" @click="getNodeSearchGraph(0)"></el-button>
             </el-input>
           </div>
           <span v-show="domain!=''">
@@ -519,7 +519,7 @@ export default {
         }
       ],
       nodeRelations: [],
-      selectRelation: 'node',
+      selectRelation: 'NODE',
       selectNodeRelation: 'name',
       nodeAttributes: [],
       relationAttributes: [],
@@ -563,10 +563,9 @@ export default {
       event.preventDefault();
     },
     selectRelationHandle(value) {
-      console.log(value);
       let arr;
       let label;
-      if(value == 'node') {
+      if(value === 'NODE') {
         arr = this.nodeAttributes;
         label = 'name';
       }else {
@@ -907,7 +906,7 @@ export default {
       _this.loading = true;
       var data = {
         domain: _this.domain,
-        nodename: _this.nodename,
+        nodename: '',
         pageSize: _this.pagesize
       };
       $.ajax({
@@ -922,6 +921,36 @@ export default {
               _this.graph.nodes = graphModel.node;
               _this.originalNodesData = _.cloneDeep(graphModel.node);
               _this.graph.links = graphModel.relationship;
+              _this.updategraph();
+            }
+          }
+        }
+      });
+    },
+    getNodeSearchGraph() {
+      var _this = this;
+      _this.loading = true;
+      //domain: _this.domain,
+      let data = {
+        type: _this.selectRelation,
+        attribute: _this.selectNodeRelation,
+        content: _this.nodename,
+        pageSize: _this.pagesize
+      };
+      $.ajax({
+        data: JSON.stringify(data),
+        type: "POST",
+        url: _this.contextRoot + "/restapi/v1/node/search",
+        contentType: 'application/json',
+        success: function(result) {
+          if (result.code == 200) {
+            var graphModel = result.data;
+            if (graphModel != null) {
+              let nodes = graphModel.node ? graphModel.node : [];
+              let relationships = graphModel.relationship ? graphModel.relationship : [];
+              _this.graph.nodes = nodes;
+              _this.originalNodesData = _.cloneDeep(nodes);
+              _this.graph.links = relationships;
               _this.updategraph();
             }
           }
@@ -1138,28 +1167,25 @@ export default {
       this.svg = graphcontainer.append("svg");
       this.svg.attr("width", width);
       this.svg.attr("height", height);
-      this.simulation = d3
-        .forceSimulation()
-        .force(
-          "link",
-          d3
-            .forceLink()
-            .distance(function(d) {
-              return Math.floor(Math.random() * 288) + 80;
-            })
+
+      this.simulation = d3.forceSimulation()
+        .force("link",d3.forceLink()
+            //.distance(function(d) {
+              //return Math.floor(Math.random() * 188) + 80;
+            //})
             .id(function(d) {
               return d.uuid;
             })
         )
-        .force(
-          "charge",
-          d3
-            .forceManyBody()
-            .strength(-180)
-            .distanceMin(-40)
-        )
-        .force("collide", d3.forceCollide())
-        .force("center", d3.forceCenter(width / 2, (height - 200) / 2));
+        // 万有引力
+        .force("charge",d3.forceManyBody().strength(-40).distanceMax(600))
+        // 碰撞作用力，为节点指定一个radius区域来防止节点重叠，设置碰撞力的强度，范围[0,1], 默认为0.7。设置迭代次数，默认为1，迭代次数越多最终的布局效果越好，但是计算复杂度更高
+        .force("collide", d3.forceCollide(60).strength(0.2).iterations(5))
+        // d3.forceCenter()用指定的x坐标和y坐标创建一个新的居中力
+        .force("center", d3.forceCenter(width / 2, (height - 200) / 2))
+        // 控制力学模拟衰减率，[0-1] ,设为0则不停止 ， 默认0.0228，直到0.001
+        .alphaDecay(0.0228);
+      
       this.linkGroup = this.svg.append("g").attr("class", "line");
       this.linktextGroup = this.svg.append("g").attr("class", "linetext");
       this.nodeGroup = this.svg.append("g").attr("class", "node");
@@ -1344,7 +1370,7 @@ export default {
       });
       _this.simulation.nodes(nodes).on("tick", ticked);
       _this.simulation.force("link").links(links);
-      _this.simulation.alphaTarget(1).restart();
+      _this.simulation.alphaTarget(0.01).restart();
       function linkArc(d) {
         var dx = d.target.x - d.source.x,
           dy = d.target.y - d.source.y,
@@ -2271,6 +2297,7 @@ export default {
     matchdomaingraph(domain, event) {
       this.domain = domain.name;
       this.domainid = domain.id;
+      this.nodename = '';
       this.getdomaingraph();
       this.getNodeAttribute();
       this.getRelationAttribute();
