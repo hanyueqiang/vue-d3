@@ -42,12 +42,6 @@
       <div class="mind-top clearfix">
         <div class="fl graph-search">
           <div class="search" v-show="domain!=''">
-            <!-- <el-button @click="getdomaingraph(0)">
-              <svg class="icon" aria-hidden="true">
-                <use xlink:href="#icon-search"></use>
-              </svg>
-            </el-button>-->
-            <!-- <el-button slot="append" icon="el-icon-search" @click="getdomaingraph(0)"></el-button> -->
             <el-select v-model="selectRelation" class="search-select-first" @change="selectRelationHandle">
               <el-option value="NODE" label="节点"></el-option>
               <el-option value="RELATION" label="关系"></el-option>
@@ -161,9 +155,6 @@
                 class="btn-bo"
                 style="padding: 12px 24px;margin-bottom: 0px;"
               >
-                <!-- <svg class="icon" aria-hidden="true">
-                  <use xlink:href="#icon-daoru" />
-                </svg>-->
                 选择文件
               </el-button>
             </el-upload>
@@ -261,6 +252,23 @@
           <el-button @click="resetattrCancel">取消</el-button>
         </div>
       </el-dialog>
+      <!-- 右键添加节点 -->
+      <el-dialog
+        id="rightAddNodeform"
+        title="添加节点"
+        :visible.sync="isRightAddNode"
+        width="400px"
+        :append-to-body="true"
+      >
+        <div>
+          <div class="mb-label">节点名称</div>
+          <el-input v-model="addNodeName"></el-input>
+        </div>
+        <div slot="footer" class="dialog-footer">
+          <el-button type="primary" @click="rightAddNodeSubmit">确定</el-button>
+          <el-button @click="rightAddNodeCancel">取消</el-button>
+        </div>
+      </el-dialog>
       <el-dialog
         id="batchcreateform"
         :title="operatenameformat(operatetype)"
@@ -307,38 +315,27 @@
     <!-- 右侧over -->
     <!-- 空白处右键 -->
     <ul class="el-dropdown-menu el-popper blankmenubar" id="blank_menubar" style="display: none;">
-      <li class="el-dropdown-menu__item" @click="btnaddsingle">
-        <!-- <svg class="icon" aria-hidden="true">
-          <use xlink:href="#icon-jiedian" />
-        </svg>-->
+      <li class="el-dropdown-menu__item" @click="rightAddNodeHandle">
+        <i class="el-icon-plus"></i>
         <span class="pl-15">添加节点</span>
       </li>
-      <li class="el-dropdown-menu__item" @click="btnquickaddnode">
-        <!-- <svg class="icon" aria-hidden="true">
-          <use xlink:href="#icon-add-rd" />
-        </svg>-->
+      <!-- <li class="el-dropdown-menu__item" @click="btnaddsingle">
+        <i class="el-icon-plus"></i>
+        <span class="pl-15">添加节点</span>
+      </li> -->
+      <!-- <li class="el-dropdown-menu__item" @click="btnquickaddnode">
         <span class="pl-15">快速添加</span>
       </li>
       <li class="el-dropdown-menu__item" @click="btnquickaddnode">
-        <!--		delete_node_and_relationship-->
-        <!-- <svg class="icon" aria-hidden="true">
-          <use xlink:href="#icon-shuchu" />
-        </svg>-->
         <span class="pl-15">删除节点</span>
-      </li>
+      </li> -->
     </ul>
     <!-- 连线按钮组 -->
     <ul class="el-dropdown-menu el-popper linkmenubar" id="link_menubar" style="display: none;">
       <li class="el-dropdown-menu__item" @click="updatelinkName">
-        <!-- <svg class="icon" aria-hidden="true">
-          <use xlink:href="#icon-editor" />
-        </svg>-->
         <span class="pl-15">编辑</span>
       </li>
       <li class="el-dropdown-menu__item" @click="deletelink">
-        <!-- <svg class="icon" aria-hidden="true">
-          <use xlink:href="#icon-shanchu" />
-        </svg>-->
         <span class="pl-15">删除</span>
       </li>
     </ul>
@@ -523,6 +520,8 @@ export default {
       selectNodeRelation: 'name',
       nodeAttributes: [],
       relationAttributes: [],
+      isRightAddNode: false,
+      addNodeName: '',
       contextRoot: "/kgmaker"
     };
   },
@@ -587,6 +586,8 @@ export default {
         _this.svg.selectAll(".buttongroup").classed("circle_opreate", true);
         var left = event.clientX;
         var top = event.clientY;
+        _this.txx = event.offsetX;
+        _this.tyy = event.offsetY;
         console.log(left, top);
         document.getElementById("blank_menubar").style.position = "fixed";
         document.getElementById("blank_menubar").style.left = left + "px";
@@ -1035,6 +1036,11 @@ export default {
       $("#link_menubar").hide();
       this.operatetype = 3;
     },
+    rightAddNodeHandle() {
+      this.isedit = false;
+      $("#link_menubar").hide();
+      this.isRightAddNode = true;
+    },
     deletedomain(id, value) {
       var _this = this;
       _this
@@ -1370,7 +1376,8 @@ export default {
       });
       _this.simulation.nodes(nodes).on("tick", ticked);
       _this.simulation.force("link").links(links);
-      _this.simulation.alphaTarget(0.01).restart();
+     // _this.simulation.alphaTarget(0.01).restart();
+      _this.simulation.alpha(0.5).restart();
       function linkArc(d) {
         var dx = d.target.x - d.source.x,
           dy = d.target.y - d.source.y,
@@ -1651,7 +1658,7 @@ export default {
             return arc(d);
           })
           .attr("fill", "#D2D5DA")
-          .style("opacity", 0.8)
+          .style("opacity", 0.9)
           .attr("stroke", "#f0f0f4")
           .attr("stroke-width", 2);
         buttonEnter
@@ -1723,7 +1730,7 @@ export default {
         return _this.setFillColor(d.labelName);
         //return "#ff4500";
       });
-      nodeEnter.style("opacity", 0.9);
+      nodeEnter.style("opacity", 1);
       nodeEnter.style("stroke", function(d) {
         if (typeof d.color != "undefined" && d.color != "") {
           return d.color;
@@ -1768,6 +1775,8 @@ export default {
         d3.select(this).style("stroke-width", "2");
       });
       nodeEnter.on("click", function(d, i) {
+        $("#link_menubar").hide(); // 隐藏空白处右键菜单(连线)
+        $("#blank_menubar").hide(); // 隐藏空白处右键菜单
         d3.select("#nodedetail").style("display", "block");
         var out_buttongroup_id = ".out_buttongroup_" + i;
         _this.svg.selectAll(".buttongroup").classed("circle_opreate", true);
@@ -1846,7 +1855,8 @@ export default {
         _this.updatenodename(d); // 双击更新节点名称
       });
       nodetextenter.on("click", function(d) {
-        $("#link_menubar").hide(); // 隐藏空白处右键菜单
+        $("#link_menubar").hide(); // 隐藏空白处右键菜单(连线)
+        $("#blank_menubar").hide(); // 隐藏空白处右键菜单
         _this.graphEntity = d;
         _this.selectnodeid = d.uuid;
         // 更新工具栏节点信息
@@ -2583,6 +2593,50 @@ export default {
           }
         }
       });
+    },
+    //右键添加节点成功
+    rightAddNodeSubmit() {
+      var _this = this;
+      var data = {
+        labelName: _this.domain,
+        name: _this.addNodeName
+      };
+      $.ajax({
+        data: JSON.stringify(data),
+        type: "POST",
+        contentType: 'application/json',
+        url: _this.contextRoot + "/restapi/v1/node/add",
+        success: function(result) {
+          if (result.code == 200) {
+            d3.select(".graphcontainer").style("cursor", "");
+            _this.addNodeName = '';
+            _this.isRightAddNode = false;
+            var newnode = result.data;
+            newnode.r = 30;
+            newnode.x = _this.txx;
+            newnode.y = _this.tyy;
+            newnode.fx = _this.txx;
+            newnode.fy = _this.tyy;
+            _this.graph.nodes.push(newnode);
+            _this.updategraph();
+            _this.$message({
+              message: "添加成功",
+              type: "success"
+            });
+          }else {
+            _this.$message({
+              message: "添加失败",
+              type: "info"
+            });
+          }
+        }
+      });
+
+    },
+    //右键添加节点失败
+    rightAddNodeCancel() {
+      this.addNodeName = '';
+      this.isRightAddNode = false;
     }
   }
 };
