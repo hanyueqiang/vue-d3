@@ -521,7 +521,10 @@ export default {
       relationAttributes: [],
       isRightAddNode: false,
       addNodeName: '',
-      contextRoot: "/kgmaker"
+      contextRoot: "/kgmaker",
+      expandedNodeMap: {},
+      nodeMap: {},
+      relationshipMap: {}
     };
   },
   filters: {
@@ -1001,6 +1004,10 @@ export default {
               });
               if (typeof sobj == "undefined") {
                 _this.graph.nodes.push(m);
+                if (!_this.findNode(m.id)) {
+                  _this.nodeMap[m.id] = m;
+                  _this.expandedNodeMap[selectid] = _this.expandedNodeMap[selectid] ? _this.expandedNodeMap[selectid].concat([m.id]) : [m.id];
+                }
               }
             });
             var newnodescount = _this.graph.nodes.length;
@@ -1017,6 +1024,9 @@ export default {
               });
               if (typeof sobj == "undefined") {
                 _this.graph.links.push(m);
+                if(!_this.findRelationShipNode(m.relationId)) {
+                  _this.relationshipMap[m.relationId] = m;
+                }
               }
             });
             _this.updategraph();
@@ -1024,6 +1034,12 @@ export default {
         },
         error: function(data) {}
       });
+    },
+    findNode (id) {
+      return this.nodeMap[id];
+    },
+    findRelationShipNode (relationId) {
+      return this.relationshipMap[relationId];
     },
     btnaddsame() {
       this.operatetype = 1;
@@ -1227,16 +1243,16 @@ export default {
       var nodes = this.graph.nodes;
       var links = [];
       //由后端传过来的节点坐标，固定节点，由于是字符串，需要转换
-      nodes.forEach(function(n) {
-        if (typeof n.fx == "undefined" || n.fx == "" || n.fx == null) {
-          n.fx = null;
-        }
-        if (typeof n.fy == "undefined" || n.fy == "" || n.fy == null) {
-          n.fy = null;
-        }
-        if (typeof n.fx == "string") n.fx = parseFloat(n.fx);
-        if (typeof n.fy == "string") n.fy = parseFloat(n.fy);
-      });
+      // nodes.forEach(function(n) {
+      //   if (typeof n.fx == "undefined" || n.fx == "" || n.fx == null) {
+      //     n.fx = null;
+      //   }
+      //   if (typeof n.fy == "undefined" || n.fy == "" || n.fy == null) {
+      //     n.fy = null;
+      //   }
+      //   if (typeof n.fx == "string") n.fx = parseFloat(n.fx);
+      //   if (typeof n.fy == "string") n.fy = parseFloat(n.fy);
+      // });
       lks.forEach(function(m) {
         var sourceNode = nodes.filter(function(n) {
           return n.uuid === m.sourceid;
@@ -1472,7 +1488,8 @@ export default {
               _this.tyy = d.y;
               break;
             case "MORE":
-              _this.getmorenode(d.id);
+              _this.nodeFoldClicked(d);
+              //_this.getmorenode(d.id);
               break;
             case "CHILD":
               _this.operatetype = 2;
@@ -1517,6 +1534,69 @@ export default {
       _this.svg.selectAll(".action_4").on("click", function(d) {
         _this.nodebuttonAction = "DELETE";
       });
+    },
+    nodeFoldClicked(d) {
+      if (d.expanded) {
+        this.nodeCollapse(d);
+        return
+      }
+      d.expanded = true;
+      let obj = this.graph.nodes.find(item => item.id == d.id);
+      if(obj) {
+        obj.expanded = true;
+      }
+
+      this.getmorenode(d.id);
+    },
+    nodeCollapse(d) {
+      d.expanded = false;
+      let obj = this.graph.nodes.find(item => item.id == d.id);
+      if(obj) {
+        obj.expanded = false;
+      }
+      this.collapseNode(d);
+    },
+    //折叠
+    collapseNode(node) {
+      if (!this.expandedNodeMap[node.id]) {
+        return
+      }
+      this.expandedNodeMap[node.id].forEach(id => {
+        const eNode = this.nodeMap[id];
+        this.collapseNode(eNode);
+        this.removeConnectedRelationships(eNode);
+        this.removeNode(eNode);
+      });
+      this.expandedNodeMap[node.id] = [];
+      this.updategraph();
+      //this.addnodebutton();
+    },
+    removeConnectedRelationships (node) {
+      for (let r of Array.from(this.findAllRelationshipToNode(node))) {
+        if(this.findRelationShipNode(r.relationId)) {
+          //返回数组索引
+          let index = this.graph.links.findIndex(item => item.relationId == r.relationId);
+          this.graph.links.splice(index, 1);
+          delete this.relationshipMap[r.relationId];
+        }
+      }
+      return this;
+    },
+    removeNode (node) {
+      if (this.findNode(node.id)) {
+        //返回数组索引
+        let index = this.graph.nodes.findIndex(item => item.id == node.id);
+        this.graph.nodes.splice(index, 1);
+        delete this.nodeMap[node.id];
+      }
+      return this;
+    },
+    //找到和展开节点所有有关系的信息
+    findAllRelationshipToNode (node) {
+      return this.graph.links.filter(
+        relationship =>
+          relationship.sourceid === node.uuid || relationship.targetid === node.uuid
+      )
     },
     createnode() {
       var _this = this;
@@ -1670,7 +1750,8 @@ export default {
           .text(function(d, i) {
             var zi = new Array();
             zi[0] = "编辑";
-            zi[1] = "展开";
+            //zi[1] = d.expanded ? "折叠" : "展开/折叠";
+            zi[1] = d.expanded ? "折叠" : "收/展";
             // zi[2] = "追加";
             zi[2] = "属性";
             zi[3] = "连线";
