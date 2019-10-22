@@ -23,7 +23,7 @@
     "fullcalendar-scheduler": "1.9.0",
     "jquery": "^1.11.3",
     "js-cookie": "2.2.0",
-    "lodash": "^3.5.0",
+    "lodash": "^4.17.15",
     "mock": "^0.1.1",
     "mockjs": "^1.0.1-beta3",
     "normalize.css": "7.0.0",
