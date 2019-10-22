@@ -388,9 +388,8 @@ export default {
       selectAttribute: 'name',
       pagesizelist: [
         { size: 100, isactive: true },
-        { size: 500, isactive: false },
-        { size: 1000, isactive: false },
-        { size: 2000, isactive: false }
+        { size: 200, isactive: false },
+        { size: 500, isactive: false }
       ],
       colorList: [
         "#ff8373",
@@ -984,12 +983,13 @@ export default {
     getmorenode(selectid) {
       var _this = this;
       //var data = { domain: _this.domain, nodeid: _this.selectnodeid };
-      var data = { domain: _this.domain, nodeid: selectid };
+      var data = { id: selectid };
       $.ajax({
-        data: data,
+        data: JSON.stringify(data),
         type: "POST",
         //url: "/getmorerelationnode",
-        url: _this.contextRoot + "/getmorerelationnode",
+        url: _this.contextRoot + "/restapi/v1/node/next/level/show",
+        contentType: 'application/json',
         success: function(result) {
           if (result.code == 200) {
             var newnodes = result.data.node || [];
