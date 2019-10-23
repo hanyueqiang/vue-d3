@@ -5,7 +5,8 @@ const app = {
     // 中英文
     language: Cookies.get('language') || 'zh',
     sidebar: {
-      opened: !+Cookies.get('sidebarStatus')
+      //opened: !+Cookies.get('sidebarStatus')
+      opened: false
     }
   },
   mutations: {
