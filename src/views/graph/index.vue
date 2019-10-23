@@ -267,6 +267,18 @@
         width="400px"
         :append-to-body="true"
       >
+        <div class="rightadd-nodetag">
+          <div class="mb-label">节点标签</div>
+          <el-select v-model="addNodeTag" class="rightadd-nodetag-select">
+            <el-option
+              v-for="item in pageModel.nodeList"
+              :key="item.id"
+              :label="item.name"
+              :value="item.name"
+            >
+            </el-option>
+          </el-select>
+        </div>
         <div>
           <div class="mb-label">节点名称</div>
           <el-input v-model="addNodeName"></el-input>
@@ -531,7 +543,8 @@ export default {
       contextRoot: "/kgmaker",
       expandedNodeMap: {},
       nodeMap: {},
-      relationshipMap: {}
+      relationshipMap: {},
+      addNodeTag: '' // 添加节点/节点标签
     };
   },
   filters: {
@@ -1006,7 +1019,14 @@ export default {
           if (result.code == 200) {
             var newnodes = result.data.node || [];
             var newships = result.data.relationship || [];
-            var oldnodescount = _this.graph.nodes.length;
+            //var oldnodescount = _this.graph.nodes.length;
+            if (newships.length == 0) {
+              _this.$message({
+                message: "没有更多节点信息",
+                type: "success"
+              });
+              return;
+            }
             newnodes.forEach(function(m) {
               var sobj = _this.graph.nodes.find(function(x) {
                 return x.uuid === m.uuid;
@@ -1020,13 +1040,13 @@ export default {
               }
             });
             var newnodescount = _this.graph.nodes.length;
-            if (newnodescount <= oldnodescount) {
-              _this.$message({
-                message: "没有更多节点信息",
-                type: "success"
-              });
-              return;
-            }
+            // if (newnodescount <= oldnodescount) {
+            //   _this.$message({
+            //     message: "没有更多节点信息",
+            //     type: "success"
+            //   });
+            //   return;
+            // }
             newships.forEach(function(m) {
               var sobj = _this.graph.links.find(function(x) {
                 return x.uuid === m.uuid;
@@ -1064,6 +1084,8 @@ export default {
     rightAddNodeHandle() {
       this.isedit = false;
       $("#link_menubar").hide();
+      let nodeName = this.pageModel.nodeList[0] ? this.pageModel.nodeList[0].name : '';
+      this.addNodeTag = this.domain === '全部' ? nodeName : this.domain;
       this.isRightAddNode = true;
     },
     deletedomain(id, value) {
@@ -1667,6 +1689,11 @@ export default {
             newnode.fy = _this.tyy;
             _this.graph.nodes.push(newnode);
             _this.updategraph();
+          }else {
+            _this.$message({
+              type: "info",
+              message: result.msg
+            });
           }
         }
       });
@@ -2356,6 +2383,11 @@ export default {
                   message: "操作成功",
                   type: "success"
                 });
+              }else {
+                _this.$message({
+                  type: "info",
+                  message: result.msg
+                });
               }
             }
           });
@@ -2704,9 +2736,26 @@ export default {
     //右键添加节点成功
     rightAddNodeSubmit() {
       var _this = this;
+      let addNodeName = _this.addNodeName;
+      let addNodeTag = _this.addNodeTag;
+      if(!addNodeName) {
+        _this.$message({
+          message: "节点名称不能为空",
+          type: "info"
+        });
+        return
+      }
+      if(!addNodeTag) {
+        _this.$message({
+          message: "节点标签不能为空",
+          type: "info"
+        });
+        return
+      }
       var data = {
-        labelName: _this.domain,
-        name: _this.addNodeName
+        //labelName: _this.domain,
+        labelName: addNodeTag,
+        name: addNodeName
       };
       $.ajax({
         data: JSON.stringify(data),
@@ -2717,6 +2766,7 @@ export default {
           if (result.code == 200) {
             d3.select(".graphcontainer").style("cursor", "");
             _this.addNodeName = '';
+            _this.addNodeTag = '';
             _this.isRightAddNode = false;
             var newnode = result.data;
             newnode.r = 30;
@@ -2732,8 +2782,8 @@ export default {
             });
           }else {
             _this.$message({
-              message: "添加失败",
-              type: "info"
+              type: "info",
+              message: result.msg
             });
           }
         }
@@ -2994,5 +3044,11 @@ circle {
 }
 .search .input-with-select {
   width: 180px;
+}
+.rightadd-nodetag {
+  margin-bottom: 10px;
+}
+.rightadd-nodetag .rightadd-nodetag-select {
+  width: 100%;
 }
 </style>
