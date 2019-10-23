@@ -1091,6 +1091,11 @@ export default {
     },
     deletedomain(id, value) {
       var _this = this;
+      this.$message({
+        type: "info",
+        message: "暂不支持删除！"
+      });
+      return
       _this
         .$confirm(
           "此操作将删除该标签及其下节点和关系(不可恢复), 是否继续?",
