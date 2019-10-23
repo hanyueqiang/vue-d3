@@ -1053,9 +1053,10 @@ export default {
               });
               if (typeof sobj == "undefined") {
                 _this.graph.links.push(m);
-                if(!_this.findRelationShipNode(m.relationId)) {
-                  _this.relationshipMap[m.relationId] = m;
-                }
+                _this.relationshipMap[selectid] = _this.relationshipMap[selectid] ? _this.relationshipMap[selectid].concat([m.relationId]) : [m.relationId];
+                //if(!_this.findRelationShipNode(selectid)) {
+                  // _this.expandedNodeMap[selectid] = _this.expandedNodeMap[selectid] ? _this.expandedNodeMap[selectid].concat([m.id]) : [m.id];
+                //}
               }
             });
             _this.updategraph();
@@ -1573,23 +1574,16 @@ export default {
         return
       }
       d.expanded = true;
-      let obj = this.graph.nodes.find(item => item.id == d.id);
-      if(obj) {
-        obj.expanded = true;
-      }
-
       this.getmorenode(d.id);
     },
     nodeCollapse(d) {
       d.expanded = false;
-      let obj = this.graph.nodes.find(item => item.id == d.id);
-      if(obj) {
-        obj.expanded = false;
-      }
       this.collapseNode(d);
+      this.updategraph();
     },
     //折叠
     collapseNode(node) {
+      this.removeConnectedRelationships(node);
       if (!this.expandedNodeMap[node.id]) {
         return
       }
@@ -1600,19 +1594,26 @@ export default {
         this.removeNode(eNode);
       });
       this.expandedNodeMap[node.id] = [];
-      this.updategraph();
+      //this.updategraph();
       //this.addnodebutton();
     },
     removeConnectedRelationships (node) {
-      for (let r of Array.from(this.findAllRelationshipToNode(node))) {
-        if(this.findRelationShipNode(r.relationId)) {
-          //返回数组索引
-          let index = this.graph.links.findIndex(item => item.relationId == r.relationId);
-          this.graph.links.splice(index, 1);
-          delete this.relationshipMap[r.relationId];
-        }
+      // for (let r of Array.from(this.findAllRelationshipToNode(node))) {
+      //   if(this.findRelationShipNode(r.relationId)) {
+      //     //返回数组索引
+      //     let index = this.graph.links.findIndex(item => item.relationId == r.relationId);
+      //     this.graph.links.splice(index, 1);
+      //     delete this.relationshipMap[r.relationId];
+      //   }
+      // }
+      if (!this.relationshipMap[node.id]) {
+        return
       }
-      return this;
+      this.relationshipMap[node.id].forEach(relationId => {
+        let index = this.graph.links.findIndex(item => item.relationId == relationId);
+        this.graph.links.splice(index, 1);
+      });
+      this.relationshipMap[node.id] = [];
     },
     removeNode (node) {
       if (this.findNode(node.id)) {
@@ -1621,7 +1622,6 @@ export default {
         this.graph.nodes.splice(index, 1);
         delete this.nodeMap[node.id];
       }
-      return this;
     },
     //找到和展开节点所有有关系的信息
     findAllRelationshipToNode (node) {
