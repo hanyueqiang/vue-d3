@@ -5,6 +5,13 @@
       <div class="ml-m">
         <div class="ml-ht">图谱列表</div>
         <div class="ml-a-box" style="min-height:280px">
+          <a href="javascript:void(0)" @click="matchAlldomaingraph()">
+            <el-tag
+              style="margin:2px"
+              effect="dark"
+              :type="domain == '全部' ? 'success': ''"
+            >全部</el-tag>
+          </a>
           <a
             @click="matchdomaingraph(m,$event)"
             v-for="m in pageModel.nodeList"
@@ -177,7 +184,7 @@
       </el-dialog>
       <el-dialog
         id="editform"
-        title="属性编辑"
+        title="编辑"
         :visible.sync="isedit"
         width="30%"
         :append-to-body="true"
@@ -188,7 +195,7 @@
           v-model="propactiveName"
           @tab-click="prophandleClick"
         >
-          <el-tab-pane label="属性编辑" name="propedit">
+          <el-tab-pane label="编辑节点" name="propedit">
             <el-form :model="graphEntity">
               <el-form-item label="节点名称">
                 <el-input v-model="graphEntity.name"></el-input>
@@ -934,11 +941,13 @@ export default {
       var _this = this;
       _this.loading = true;
       //domain: _this.domain,
+      let labelName = _this.domain == '全部' ? '' : _this.domain;
       let data = {
         type: _this.selectRelation,
         attribute: _this.selectNodeRelation,
         content: _this.nodename,
-        pageSize: _this.pagesize
+        pageSize: _this.pagesize,
+        labelName
       };
       $.ajax({
         data: JSON.stringify(data),
@@ -1482,10 +1491,11 @@ export default {
         if (_this.nodebuttonAction) {
           switch (_this.nodebuttonAction) {
             case "EDIT":
-              _this.isedit = true;
-              _this.propactiveName = "propedit";
-              _this.txx = d.x;
-              _this.tyy = d.y;
+              _this.updatenodename(d);
+              // _this.isedit = true;
+              // _this.propactiveName = "propedit";
+              // _this.txx = d.x;
+              // _this.tyy = d.y;
               break;
             case "MORE":
               _this.nodeFoldClicked(d);
@@ -1843,7 +1853,8 @@ export default {
         clearTimeout(_this.timer);
       });
       nodeEnter.on("dblclick", function(d) {
-        _this.updatenodename(d); // 双击更新节点名称
+        // 双击更新节点名称
+        _this.updatenodename(d);
       });
       nodeEnter.on("mouseenter", function(d) {
         var aa = d3.select(this)._groups[0][0];
@@ -1933,7 +1944,8 @@ export default {
       });
 
       nodetextenter.on("dblclick", function(d) {
-        _this.updatenodename(d); // 双击更新节点名称
+        // 双击更新节点名称
+        _this.updatenodename(d); 
       });
       nodetextenter.on("click", function(d) {
         $("#link_menubar").hide(); // 隐藏空白处右键菜单(连线)
@@ -2096,6 +2108,7 @@ export default {
 
       return linktextEnter;
     },
+    //删除单个节点
     deletenode(out_buttongroup_id, labelName) {
       var _this = this;
       _this
@@ -2310,27 +2323,30 @@ export default {
           });
         });
     },
+    //双击更新节点名称
     updatenodename(d) {
       var _this = this;
       _this
-        .$prompt("编辑节点名称", "提示", {
+        .$prompt("编辑节点名称", "编辑", {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           inputValue: d.name
         })
         .then(function(res) {
-          value = res.value;
-          var data = { domain: _this.domain, nodeid: d.uuid, nodename: value };
+          let value = res.value;
+          //var data = { domain: _this.domain, nodeid: d.uuid, nodename: value };
+          let datas = { id: d.id, name: value, labelName: _this.domain };
           $.ajax({
-            data: data,
+            data: JSON.stringify(datas),
             type: "POST",
             //url: "/updatenodename",
-            url: _this.contextRoot + "/updatenodename",
+            url: _this.contextRoot + "/createnode",
+            contentType: "application/json",
             success: function(result) {
               if (result.code == 200) {
-                if (d.uuid != 0) {
-                  for (var i = 0; i < _this.graph.nodes.length; i++) {
-                    if (_this.graph.nodes[i].uuid == d.uuid) {
+                if (d.id != 0) {
+                  for (let i = 0; i < _this.graph.nodes.length; i++) {
+                    if (_this.graph.nodes[i].id == d.id) {
                       _this.graph.nodes[i].name = value;
                     }
                   }
@@ -2389,7 +2405,16 @@ export default {
       this.domain = domain.name;
       this.domainid = domain.id;
       this.nodename = '';
-      this.getdomaingraph();
+      //this.getdomaingraph();
+      this.getNodeSearchGraph();
+      this.getNodeAttribute();
+      this.getRelationAttribute();
+    },
+    matchAlldomaingraph() {
+      this.domain = '全部';
+      this.domainid = '';
+      //this.getdomaingraph();
+      this.getNodeSearchGraph();
       this.getNodeAttribute();
       this.getRelationAttribute();
     },
@@ -2500,7 +2525,8 @@ export default {
         }
       }
       this.pagesize = m.size;
-      this.getdomaingraph();
+      //this.getdomaingraph();
+      this.getNodeSearchGraph();
     },
     batchcreatenode() {
       var _this = this;
