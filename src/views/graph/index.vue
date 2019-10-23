@@ -2822,7 +2822,7 @@ ul {
   display: flex;
 }
 .mind-l {
-  width: 250px;
+  width: 190px;
   float: left;
   background: #f7f9fc;
   height: 100%;
@@ -2888,7 +2888,7 @@ ul {
   margin-right: 10px;
 }
 .mind-cen {
-  height: calc(100% - 70px);
+  height: calc(100% - 50px);
 }
 .sd {
   margin: 2px;
