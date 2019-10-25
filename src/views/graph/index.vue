@@ -4,43 +4,10 @@
     <el-scrollbar class="mind-l">
       <div class="ml-m">
         <div class="ml-ht">图谱列表</div>
-        <div class="ml-a-box" style="min-height:280px">
-          <a href="javascript:void(0)" @click="matchAlldomaingraph()">
-            <el-tag
-              style="margin:2px"
-              effect="dark"
-              :type="domain == '全部' ? 'success': ''"
-            >全部</el-tag>
-          </a>
-          <a
-            @click="matchdomaingraph(m,$event)"
-            v-for="m in pageModel.nodeList"
-            :key="m.id"
-            href="javascript:void(0)"
-          >
-            <el-tag
-              closable
-              style="margin:2px"
-              effect="dark"
-              :type="domain == m.name ? 'success': ''"
-              @close="deletedomain(m.id,m.name)"
-            >{{m.name}}</el-tag>
-          </a>
-          <el-button
-            v-if="pageModel.pageIndex<pageModel.totalPage"
-            type="info"
-            style="margin: 2px 0 4px 2px;"
-            plain
-            size="small"
-            @click="getmoredomain"
-          >加载更多</el-button>
-        </div>
-        <div id="follow-us" class="guanzhu" style="padding: 20px;">
-          <h2 class="hometitle">最新变动</h2>
-          <ul>
-            <li class="wx"></li>
-          </ul>
-        </div>
+        <!-- 左侧labelname标签 -->
+        <labelNameView :domain="domain" :pageModel="pageModel" @matchAlldomaingraph="matchAlldomaingraph" @matchdomaingraph="matchdomaingraph" @deletedomain="deletedomain" />
+        <!-- 最新变动 -->
+        <!-- <latestChangeView /> -->
       </div>
     </el-scrollbar>
     <!-- 右侧 -->
@@ -384,8 +351,15 @@ import $ from "jquery";
 import _ from "lodash";
 import * as d3 from "d3";
 
+import labelNameView from './components/labelNameView';
+import latestChangeView from './components/latestChangeView';
+
 export default {
   name: "graph",
+  components: {
+    labelNameView,
+    latestChangeView
+  },
   data() {
     return {
       svg: null,
@@ -2450,6 +2424,7 @@ export default {
     matchAlldomaingraph() {
       this.domain = '全部';
       this.domainid = '';
+      this.nodename = '';
       //this.getdomaingraph();
       this.getNodeSearchGraph();
       this.getNodeAttribute();
