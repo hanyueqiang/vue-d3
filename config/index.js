@@ -36,12 +36,6 @@ module.exports = {
     devtool: 'cheap-source-map',
     cacheBusting: true,
     cssSourceMap: false,
-    // proxy: { 
-    //   '/': {
-    //     target: 'http://10.200.16.163:8080',
-    //     //changeOrigin: true
-    //   }
-    // }
   },
 
   build: {
