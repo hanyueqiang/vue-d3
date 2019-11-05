@@ -16,29 +16,20 @@
       <div class="mind-top clearfix">
         <div class="fl graph-search">
           <div class="search" v-show="domain!=''">
-            <el-select v-model="selectRelation" class="search-select-first" @change="selectRelationHandle">
-              <el-option value="NODE" label="节点"></el-option>
-              <el-option value="RELATION" label="关系"></el-option>
-            </el-select>
-            <el-select v-model="selectNodeRelation" class="search-select-second">
-              <el-option
-                v-for="item in nodeRelations"
-                :key="item"
-                :label="item"
-                :value="item"
-              >
-              </el-option>
-            </el-select>
             <el-input
               placeholder="请输入内容"
               v-model="nodename"
               @keyup.enter.native="getNodeSearchGraph(0)"
               class="input-with-select"
             >
+              <el-select v-model="selectRelation" slot="prepend" placeholder="请选择" class="input-with-select-pre">
+                <el-option value="NODE" label="节点"></el-option>
+                <el-option value="RELATION" label="关系"></el-option>
+              </el-select>
               <el-button slot="append" icon="el-icon-search" @click="getNodeSearchGraph(0)"></el-button>
             </el-input>
           </div>
-          <span v-show="domain!=''">
+          <!-- <span v-show="domain!=''">
             <span>
               <span>显示节点个数：</span>
               <a
@@ -50,15 +41,15 @@
                 :class="[m.isactive ? 'sd-active' : '', 'sd']"
               >{{m.size}}</a>
             </span>
-          </span>
-          <ul class="color-represent" v-show="domain!=''">
+          </span> -->
+          <!-- <ul class="color-represent" v-show="domain!=''">
             <li
               v-for="(m, index) in colorModels"
               :key="index"
               :style="{ background: m.color }"
               class="color-represent-single"
             >{{m.name}}</li>
-          </ul>
+          </ul> -->
         </div>
         <div class="fr">
           <a href="javascript:void(0)" @click="requestFullScreen" class="svg-a-sm">全屏</a>
@@ -510,8 +501,6 @@ export default {
       nodeRelations: [],
       selectRelation: 'NODE',
       selectNodeRelation: 'name',
-      nodeAttributes: [],
-      relationAttributes: [],
       isRightAddNode: false,
       addNodeName: '',
       contextRoot: "/kgmaker",
@@ -556,19 +545,6 @@ export default {
     addUserAttrHandle(event) {
       this.newAttrFormModel.push({ key: "", value: "" });
       event.preventDefault();
-    },
-    selectRelationHandle(value) {
-      let arr;
-      let label;
-      if(value === 'NODE') {
-        arr = this.nodeAttributes;
-        label = 'name';
-      }else {
-        arr = this.relationAttributes;
-        label = 'relation';
-      }
-      this.nodeRelations = arr;
-      this.selectNodeRelation = label;
     },
     initJqEvents() {
       var _this = this;
@@ -2418,8 +2394,6 @@ export default {
       this.nodename = '';
       //this.getdomaingraph();
       this.getNodeSearchGraph();
-      this.getNodeAttribute();
-      this.getRelationAttribute();
     },
     matchAlldomaingraph() {
       this.domain = '全部';
@@ -2427,39 +2401,6 @@ export default {
       this.nodename = '';
       //this.getdomaingraph();
       this.getNodeSearchGraph();
-      this.getNodeAttribute();
-      this.getRelationAttribute();
-    },
-    getNodeAttribute() {
-      let _this = this;
-      let data = {};
-      $.ajax({
-        data: JSON.stringify(data),
-        type: "POST",
-        url: _this.contextRoot + "/restapi/v1/attribute/node/get",
-        contentType: 'application/json',
-        success: function(result) {
-          if (result.code == 200) {
-            _this.nodeAttributes = result.data;
-            _this.nodeRelations = result.data;
-          }
-        }
-      });
-    },
-    getRelationAttribute() {
-      let _this = this;
-      let data = {};
-      $.ajax({
-        data: JSON.stringify(data),
-        type: "POST",
-        url: _this.contextRoot + "/restapi/v1/attribute/relation/get",
-        contentType: 'application/json',
-        success: function(result) {
-          if (result.code == 200) {
-            _this.relationAttributes = result.data;
-          }
-        }
-      });
     },
     refreshnode(event) {
       $(".ml-a").removeClass("cur");
@@ -3014,16 +2955,11 @@ circle {
   color: #409eff;
   cursor: pointer;
 }
-.search .search-select-first {
-  width: 85px;
-  margin-right: 5px;
-}
-.search .search-select-second {
-  width: 120px;
-  margin-right: 5px;
-}
 .search .input-with-select {
-  width: 180px;
+  width: 300px;
+}
+.search .input-with-select-pre {
+  width: 85px;
 }
 .rightadd-nodetag {
   margin-bottom: 10px;
