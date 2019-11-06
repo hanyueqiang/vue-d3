@@ -1,15 +1,17 @@
 <template>
   <div class="mind-box">
     <!-- 左侧 -->
-    <el-scrollbar class="mind-l">
+    <div class="mind-l">
       <div class="ml-m">
         <div class="ml-ht">图谱列表</div>
         <!-- 左侧labelname标签 -->
-        <labelNameView :domain="domain" :pageModel="pageModel" @matchAlldomaingraph="matchAlldomaingraph" @matchdomaingraph="matchdomaingraph" @deletedomain="deletedomain" />
+        <!-- <labelNameView :domain="domain" :pageModel="pageModel" @matchAlldomaingraph="matchAlldomaingraph" @matchdomaingraph="matchdomaingraph" @deletedomain="deletedomain" /> -->
         <!-- 最新变动 -->
         <!-- <latestChangeView /> -->
+        <!-- 左侧树 -->
+        <sideBarView @getNodesChange="getNodesChange"/>
       </div>
-    </el-scrollbar>
+    </div>
     <!-- 右侧 -->
     <div class="mind-con">
       <!-- 头部 -->
@@ -344,12 +346,14 @@ import * as d3 from "d3";
 
 import labelNameView from './components/labelNameView';
 import latestChangeView from './components/latestChangeView';
+import sideBarView from './components/sideBarView';
 
 export default {
   name: "graph",
   components: {
     labelNameView,
-    latestChangeView
+    latestChangeView,
+    sideBarView
   },
   data() {
     return {
@@ -931,6 +935,30 @@ export default {
           }
         }
       });
+    },
+    getNodesChange(nodeName) {
+      var _this = this;
+      let data = {name: nodeName};
+      $.ajax({
+        data: JSON.stringify(data),
+        type: "POST",
+        url: _this.contextRoot + "/restapi/v1/knowledge/info",
+        contentType: 'application/json',
+        success: function(result) {
+          if (result.code == 200) {
+            var graphModel = result.data;
+            if (graphModel != null) {
+              let nodes = graphModel.node ? graphModel.node : [];
+              let relationships = graphModel.relationship ? graphModel.relationship : [];
+              _this.graph.nodes = nodes;
+              _this.originalNodesData = _.cloneDeep(nodes);
+              _this.graph.links = relationships;
+              _this.updategraph();
+            }
+          }
+        }
+      });
+
     },
     getcurrentnodeinfo(node) {
       var _this = this;
@@ -2738,11 +2766,17 @@ ul {
   display: flex;
 }
 .mind-l {
-  width: 190px;
+  width: 300px;
   float: left;
-  background: #f7f9fc;
+  // background: #f7f9fc;
+  background: #fff;
   height: 100%;
   border-right: 1px solid #d3e2ec;
+}
+.ml-m {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .ml-ht {
   height: 50px;
@@ -2754,7 +2788,11 @@ ul {
   border-bottom: 1px solid #d3e2ec;
 }
 .ml-a-box {
-  margin: 10px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
 }
 .hometitle {
   font-size: 18px;
